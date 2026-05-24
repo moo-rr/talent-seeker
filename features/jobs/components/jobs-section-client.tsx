@@ -69,7 +69,7 @@ export function JobsSectionClient({ jobs, categories }: JobsSectionClientProps) 
   const hasNoResults = activeFilter !== "all" && visibleJobs.length === 0
 
   return (
-    <SectionShell id="jobs" stagger={false} className="overflow-hidden bg-white py-12 sm:py-16 lg:py-[82px]">
+    <SectionShell id="jobs" stagger={false} className="overflow-visible bg-white py-12 sm:py-16 lg:py-[82px]">
       <StaggerInView className="mx-auto flex max-w-[1312px] flex-col items-center gap-6 text-center sm:gap-8">
         <StaggerItem>
           <p className="inline-flex items-center justify-center gap-2 rounded-lg bg-[rgba(64,160,202,0.25)] px-4 py-2 text-[12px] leading-[1.16] font-normal text-[#40A0CA]">
@@ -125,12 +125,12 @@ export function JobsSectionClient({ jobs, categories }: JobsSectionClientProps) 
           </button>
         </StaggerInView>
       ) : (
-        <StaggerInView className="mx-auto mt-10 grid w-full max-w-[1312px] gap-6 overflow-hidden sm:grid-cols-2 xl:grid-cols-3">
+        <StaggerInView className="mx-auto mt-10 grid w-full max-w-[1312px] gap-6 overflow-visible sm:grid-cols-2 xl:grid-cols-3">
           {visibleJobs.map((job) => (
-            <StaggerItem key={job.id} className="overflow-hidden p-2">
+            <StaggerItem key={job.id} className="overflow-visible p-2">
               <Card
                 className={cn(
-                  "group mx-auto w-full max-w-[420px] cursor-pointer overflow-hidden rounded-lg border border-[#78A3BE] bg-white transition-all duration-300",
+                  "group mx-auto w-full max-w-[420px] cursor-pointer overflow-visible rounded-lg border border-[#78A3BE] bg-white transition-all duration-300",
                   "hover:border-[#4BB7E7] hover:bg-[url('/contact/button-noise.png'),linear-gradient(180deg,#006EA8_0%,#005685_100%)] hover:bg-size-[180px_180px,auto] hover:bg-blend-[plus-lighter,normal] hover:text-white",
                   "hover:shadow-[0_0_0_5px_#FFFFFF,0_0_0_4px_#E8F2FF,0_4px_5px_rgba(0,86,133,0.15),0_10px_13px_rgba(0,86,133,0.22),0_24px_32px_rgba(0,86,133,0.19)]"
                 )}

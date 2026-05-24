@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     session.isLoggedIn = true
     await session.save()
 
-    return NextResponse.json({ user }, { status: 200 })
+    return NextResponse.json({ user, tokens }, { status: 200 })
   } catch (error: unknown) {
     const status = error instanceof ApiError ? error.status : 500
     const message = error instanceof ApiError ? error.message : "حدث خطأ في الخادم"

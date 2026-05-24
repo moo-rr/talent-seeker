@@ -46,6 +46,44 @@ export async function login(
   type: "user" | "company" = "user",
   locale = "ar"
 ): Promise<{ user: User; tokens: AuthTokens }> {
+  if (typeof window !== "undefined") {
+    const response = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept-Language": locale,
+      },
+      body: JSON.stringify({ email, password, type }),
+      cache: "no-store",
+    })
+
+    const data = (await response.json().catch(() => ({}))) as {
+      user?: User
+      tokens?: AuthTokens
+      message?: string
+      errors?: Record<string, string[]>
+    }
+
+    if (!response.ok) {
+      throw new Error(data.message || "فشل تسجيل الدخول")
+    }
+
+    const user = data.user
+    const tokens = data.tokens
+
+    if (!user || !tokens?.access_token) {
+      throw new Error("بيانات المستخدم غير موجودة في الرد")
+    }
+
+    return {
+      user: {
+        ...user,
+        role: user.role || type,
+      },
+      tokens,
+    }
+  }
+
   const formData = new FormData()
   formData.append("email", email)
   formData.append("password", password)

@@ -74,19 +74,7 @@ function SheetContent({
       >
         <SheetPrimitive.Title className="sr-only">{t("title")}</SheetPrimitive.Title>
         {children}
-        {showCloseButton && (
-          <SheetPrimitive.Close data-slot="sheet-close" asChild>
-            <Button
-              variant="ghost"
-              className="absolute top-3 right-3"
-              size="icon-sm"
-            >
-              <XIcon
-              />
-              <span className="sr-only">{t("close")}</span>
-            </Button>
-          </SheetPrimitive.Close>
-        )}
+     
       </SheetPrimitive.Content>
     </SheetPortal>
   )

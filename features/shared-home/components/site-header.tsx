@@ -69,7 +69,6 @@ export function SiteHeader({
 
   const [notifications, setNotifications] = React.useState<Notification[]>([])
   const [notificationsLoading, setNotificationsLoading] = React.useState(false)
-
   const [unreadCount, setUnreadCount] = React.useState<number>(0)
 
   const activeNav = React.useMemo(() => {
@@ -245,7 +244,7 @@ export function SiteHeader({
 
   if (!authState.checked) {
     return (
-      <header className="relative z-50 w-full overflow-hidden bg-[#001222]">
+      <header className="relative z-50 w-full overflow-x-hidden bg-[#001222]">
         <div className="mx-auto flex h-[88px] max-w-[1512px] items-center justify-between px-4 sm:px-6 lg:h-[128px] lg:px-[100px]">
           <div className="h-12 w-12 rounded bg-gray-700/50 animate-pulse lg:h-16 lg:w-16" />
           <div className="flex items-center gap-3">
@@ -260,16 +259,18 @@ export function SiteHeader({
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 w-full overflow-visible bg-[#001222] shadow-2xl transition-all",
+        "sticky top-0 z-50 w-full overflow-x-hidden bg-[#001222] shadow-2xl transition-all",
         isDashboard && "bg-[#001222]"
       )}
     >
-      <div className="pointer-events-none absolute top-0 -start-[10%] h-full w-[40%] bg-[#80CDF6] opacity-10 blur-[120px]" />
-      <div className="pointer-events-none absolute top-0 -end-[10%] h-full w-[40%] bg-[#80CDF6] opacity-10 blur-[120px]" />
+      {/* Background effects - fixed positioning to prevent overflow */}
+      <div className="pointer-events-none fixed top-0 -start-[10%] h-full w-[40%] bg-[#80CDF6] opacity-10 blur-[120px]" />
+      <div className="pointer-events-none fixed top-0 -end-[10%] h-full w-[40%] bg-[#80CDF6] opacity-10 blur-[120px]" />
 
-      <div className="relative z-50 mx-auto flex h-[88px] max-w-[1512px] items-center justify-between gap-3 px-4 sm:px-6 lg:h-[128px] lg:gap-6 lg:px-[100px]">
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-          <Link href="/" aria-label={t("brand")} className="flex shrink-0 items-center gap-2 sm:gap-3 relative z-50">
+      <div className="relative z-50 mx-auto flex h-[88px] w-full max-w-[1512px] items-center justify-between gap-3 px-4 sm:px-6 lg:h-[128px] lg:gap-6 lg:px-[100px]">
+        {/* Logo */}
+        <div className="flex shrink-0 items-center">
+          <Link href="/" aria-label={t("brand")} className="flex shrink-0 items-center relative z-50">
             <Image
               src="/home/hero/hero-logo.svg"
               alt={t("brand")}
@@ -282,14 +283,15 @@ export function SiteHeader({
           </Link>
         </div>
 
-        <nav className="hidden items-center gap-4 lg:flex">
+        {/* Desktop Navigation - hidden on mobile, shown on lg */}
+        <nav className="hidden lg:flex lg:items-center lg:gap-4">
           {NAV_ITEMS.map((item, index) => (
             <React.Fragment key={item.key}>
               {index > 0 && <div className="h-[18px] w-px bg-white/20" aria-hidden="true" />}
               <Link
                 href={item.href}
                 className={cn(
-                  "px-2 text-[16px] leading-[1.16] font-normal text-white transition-all duration-200 hover:text-[#7CCEF3] hover:scale-105",
+                  "whitespace-nowrap px-2 text-[16px] leading-[1.16] font-normal text-white transition-all duration-200 hover:text-[#7CCEF3] hover:scale-105",
                   activeNav === item.key && "font-semibold text-[#40A0CA]"
                 )}
               >
@@ -299,7 +301,9 @@ export function SiteHeader({
           ))}
         </nav>
 
-        <div className="relative flex shrink-0 items-center gap-2 sm:gap-3 lg:gap-4">
+        {/* Right side actions */}
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3 lg:gap-4">
+          {/* Language Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -323,7 +327,7 @@ export function SiteHeader({
                   <Link locale={option.locale} href={pathname} className="flex w-full items-center justify-between gap-3">
                     <span className="flex items-center gap-2">
                       <span className="text-lg">{option.flag}</span>
-                      {option.label}
+                      <span className="truncate">{option.label}</span>
                     </span>
                     {option.locale === currentLocale && <Check className="h-4 w-4 shrink-0 text-[#006EA8]" />}
                   </Link>
@@ -332,6 +336,7 @@ export function SiteHeader({
             </DropdownMenuContent>
           </DropdownMenu>
 
+        
           {isLoggedIn && (
             <div className="relative" ref={notificationsRef}>
               <Button
@@ -349,9 +354,9 @@ export function SiteHeader({
               </Button>
 
               {showNotifications && (
-                <div className="absolute end-0 top-[calc(100%+8px)] z-[9999] max-h-[min(70vh,500px)] w-[min(calc(100vw-2rem),380px)] overflow-hidden rounded-[16px] border border-gray-100 bg-white shadow-2xl pointer-events-auto">
-                  <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-[#006EA8]/5 to-[#005685]/5">
-                    <h3 className="font-bold text-gray-900 text-lg">
+                <div className="absolute end-0 top-[calc(100%+8px)] z-[9999] max-h-[min(70vh,500px)] w-[min(92vw,380px)] overflow-hidden rounded-[16px] border border-gray-100 bg-white shadow-2xl pointer-events-auto">
+                  <div className="border-b border-gray-100 bg-gradient-to-r from-[#006EA8]/5 to-[#005685]/5 p-4">
+                    <h3 className="text-lg font-bold text-gray-900">
                       {isRTL ? "الإشعارات" : "Notifications"}
                     </h3>
                   </div>
@@ -399,8 +404,9 @@ export function SiteHeader({
             </div>
           )}
 
+          {/* Auth Button / User Avatar */}
           {isLoggedIn ? (
-            <Link href="/dashboard" className="hidden sm:block">
+            <Link href="/dashboard" className="hidden sm:block shrink-0">
               <div className="h-10 w-10 cursor-pointer rounded-full bg-gradient-to-br from-[#006EA8] to-[#005685] p-0.5 shadow-[0px_42px_107px_rgba(123,190,255,0.34)] transition-all hover:scale-105 lg:h-[44px] lg:w-[44px]">
                 <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-white p-0.5">
                   {user?.avatar ? (
@@ -418,13 +424,14 @@ export function SiteHeader({
               </div>
             </Link>
           ) : (
-            <Link href="/sign-in" className="hidden sm:block">
+            <Link href="/sign-in" className="hidden sm:block shrink-0">
               <PrimaryButton className="h-10 min-w-[100px] px-4 text-[14px] font-medium transition-all hover:scale-105 hover:shadow-lg lg:h-[52px] lg:w-[150px] lg:text-[20px]">
                 {t("login")}
               </PrimaryButton>
             </Link>
           )}
 
+          {/* Mobile Menu Button */}
           <Sheet>
             <SheetTrigger asChild>
               <Button
@@ -439,13 +446,12 @@ export function SiteHeader({
             </SheetTrigger>
             <SheetContent
               side={isRTL ? "left" : "right"}
-              className="flex w-[min(100vw,320px)] flex-col border-[#40A0CA]/20 bg-[#001222] p-0 text-white"
+              className="flex w-[min(100vw,320px)] flex-col border-[#40A0CA]/20 bg-[#001222] p-0 text-white overflow-x-hidden"
             >
               <SheetTitle className="sr-only">{isRTL ? "القائمة" : "Navigation Menu"}</SheetTitle>
               <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-                <Link href="/" onClick={closeMobileMenu} aria-label={t("brand")} className="flex shrink-0 items-center gap-2 relative z-50">
-                  <Image src="/home/hero/hero-logo.svg" alt={t("brand")} width={48} height={48} className="h-11 w-auto" />
-                  <span className="text-sm font-semibold tracking-tight text-white">{t("brand")}</span>
+                <Link href="/" aria-label={t("brand")} className="flex shrink-0 items-center gap-2 relative z-50">
+                  <Image src="/home/hero/hero-logo.svg" alt={t("brand")} width={48} height={48} className="h-12 w-auto" />
                 </Link>
                 <SheetClose asChild>
                   <Button variant="ghost" size="icon" className="text-white hover:bg-white/10">
@@ -470,29 +476,8 @@ export function SiteHeader({
                   </Link>
                 ))}
               </nav>
-
-              <div className="space-y-3 border-t border-white/10 px-4 py-5">
-                <p className="px-1 text-[12px] font-medium text-white/60">{isRTL ? "اللغة" : "Language"}</p>
-                <div className="flex flex-col gap-1">
-                  {LOCALE_OPTIONS.map((option) => (
-                    <Link
-                      key={option.locale}
-                      locale={option.locale}
-                      href={pathname}
-                      onClick={closeMobileMenu}
-                      className={cn(
-                        "flex items-center justify-between rounded-[10px] px-4 py-2.5 text-[15px] leading-relaxed transition-colors hover:bg-white/10",
-                        option.locale === currentLocale && "bg-[#40A0CA]/20 font-semibold text-[#7CCEF3]"
-                      )}
-                    >
-                      <span className="flex items-center gap-2">
-                        <span>{option.flag}</span>
-                        {option.label}
-                      </span>
-                      {option.locale === currentLocale && <Check className="h-4 w-4 shrink-0" />}
-                    </Link>
-                  ))}
-                </div>
+               <div className="space-y-3 border-t border-white/10 px-4 py-5">
+               
 
                 {isLoggedIn ? (
                   <Link href="/dashboard" onClick={closeMobileMenu} className="block">

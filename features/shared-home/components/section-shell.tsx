@@ -28,8 +28,14 @@ export function SectionShell({ id, className, children, stagger = true }: Sectio
     )
 
   return (
-    <section id={id} className={cn("w-full px-4 sm:px-6 lg:px-[100px]", className)}>
-      <div className="mx-auto w-full max-w-[1312px]">{content}</div>
+    <section
+      id={id}
+      className={cn(
+        "w-full px-4 sm:px-6 lg:px-[100px] overflow-x-hidden", // منع أي انفلات أفقي
+        className
+      )}
+    >
+      <div className="w-full max-w-[1312px] mx-auto overflow-x-hidden">{content}</div>
     </section>
   )
 }
