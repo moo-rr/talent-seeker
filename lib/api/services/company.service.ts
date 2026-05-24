@@ -47,18 +47,29 @@ export async function getCompanyJobs(
 ): Promise<{ data: Job[]; meta: PaginationMeta }> {
   try {
     const response = await api.get<unknown>(`/jobs?page=${page}`, { token, locale })
+    const typedResponse = response as
+      | { data?: Job[]; meta?: PaginationMeta }
+      | Job[]
+      | undefined
 
-    const data = Array.isArray(response.data)
-      ? response.data
-      : Array.isArray(response)
-        ? response
+    const data = Array.isArray(typedResponse)
+      ? typedResponse
+      : Array.isArray(typedResponse?.data)
+        ? typedResponse.data
         : []
-    const meta = response.meta || {
-      current_page: page,
-      last_page: 1,
-      per_page: 10,
-      total: data.length,
-    }
+    const meta = Array.isArray(typedResponse)
+      ? {
+          current_page: page,
+          last_page: 1,
+          per_page: 10,
+          total: data.length,
+        }
+      : typedResponse?.meta || {
+          current_page: page,
+          last_page: 1,
+          per_page: 10,
+          total: data.length,
+        }
 
     return { data, meta }
   } catch (error) {
@@ -138,18 +149,29 @@ export async function getJobApplications(
     `/company/applications?job_id=${jobId}&page=${page}`,
     { token, locale }
   )
+  const typedResponse = response as
+    | { data?: JobApplication[]; meta?: PaginationMeta }
+    | JobApplication[]
+    | undefined
 
-  const data = Array.isArray(response.data)
-    ? response.data
-    : Array.isArray(response)
-      ? response
+  const data = Array.isArray(typedResponse)
+    ? typedResponse
+    : Array.isArray(typedResponse?.data)
+      ? typedResponse.data
       : []
-  const meta = response.meta || {
-    current_page: page,
-    last_page: 1,
-    per_page: 10,
-    total: data.length,
-  }
+  const meta = Array.isArray(typedResponse)
+    ? {
+        current_page: page,
+        last_page: 1,
+        per_page: 10,
+        total: data.length,
+      }
+    : typedResponse?.meta || {
+        current_page: page,
+        last_page: 1,
+        per_page: 10,
+        total: data.length,
+      }
 
   return { data, meta }
 }
@@ -179,12 +201,16 @@ export async function getCompanyStats(
 }> {
   try {
     const response = await api.get<unknown>("/company/dashboard/stats", { token, locale })
-    const stats = response.data || response
+    const typedResponse = response as { data?: Record<string, unknown> } | Record<string, unknown>
+    const stats =
+      typedResponse && typeof typedResponse === "object" && "data" in typedResponse
+        ? typedResponse.data
+        : typedResponse
 
     return {
-      total_jobs: Number(stats.total_jobs || 0),
-      total_applications: Number(stats.total_applications || 0),
-      pending_applications: Number(stats.pending_applications || 0),
+      total_jobs: Number((stats as Record<string, unknown>)?.total_jobs || 0),
+      total_applications: Number((stats as Record<string, unknown>)?.total_applications || 0),
+      pending_applications: Number((stats as Record<string, unknown>)?.pending_applications || 0),
     }
   } catch (error) {
     console.error("[Company Service] getCompanyStats error:", error)

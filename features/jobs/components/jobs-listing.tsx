@@ -80,20 +80,23 @@ export function JobsListing({
     }
 
     if (activeCategories.length > 0) {
-      if (categories.length > 0) {
-        const ids = activeCategories
-          .map((idx) => categories[idx]?.id)
-          .filter((id): id is number => id != null)
-        list = list.filter(
-          (job) => job.category?.id != null && ids.includes(job.category.id)
-        )
-      } else {
-        list = list.filter((job) =>
-          activeCategories.some(
-            (idx) => job.category?.name === categoryOptions[idx]
-          )
-        )
-      }
+      const selectedCategoryNames = activeCategories
+        .map((idx) => categoryOptions[idx]?.trim().toLowerCase())
+        .filter((value): value is string => Boolean(value))
+      const selectedCategoryIds = categories
+        .map((category, idx) => (activeCategories.includes(idx) ? category.id : null))
+        .filter((id): id is number => id != null)
+
+      list = list.filter((job) => {
+        const jobCategoryId = job.category?.id
+        const jobCategoryName = job.category?.name?.trim().toLowerCase()
+
+        if (jobCategoryId != null && selectedCategoryIds.includes(jobCategoryId)) {
+          return true
+        }
+
+        return jobCategoryName != null && selectedCategoryNames.includes(jobCategoryName)
+      })
     }
 
     if (salaryValue > 0) {
@@ -169,7 +172,7 @@ export function JobsListing({
   }
 
   return (
-    <StaggerInView className="mx-auto mt-[52px] w-full max-w-[1312px] space-y-5 px-4 sm:px-6 lg:px-8">
+    <StaggerInView className="mx-auto mt-[52px] pb-12 sm:pb-16 lg:pb-[82px] w-full max-w-[1312px] space-y-5 px-4 sm:px-6 lg:px-8">
       <StaggerItem>
         <div className="flex items-center justify-between gap-4">
           <h2 className="text-[24px] leading-[1.16] font-semibold text-[#171717] sm:text-[32px] lg:text-[36px]">
@@ -201,19 +204,21 @@ export function JobsListing({
           ) : (
             <StaggerInView
               className={cn(
-                "grid gap-6",
+                "grid gap-6 justify-center",
                 "grid-cols-1 sm:grid-cols-2 md:max-lg:grid-cols-3",
                 isDesktopFilterOpen ? "lg:grid-cols-2" : "lg:grid-cols-3"
               )}
             >
               {filteredJobs.map((job) => (
-                <StaggerItem key={job.id} className="h-full">
-                  <JobCard
-                    job={job}
-                    locale={locale}
-                    isRtl={isRtl}
-                    labels={cardLabels}
-                  />
+                <StaggerItem key={job.id} className="h-full flex justify-center">
+                  <div className="w-full max-w-[420px]">
+                    <JobCard
+                      job={job}
+                      locale={locale}
+                      isRtl={isRtl}
+                      labels={cardLabels}
+                    />
+                  </div>
                 </StaggerItem>
               ))}
             </StaggerInView>

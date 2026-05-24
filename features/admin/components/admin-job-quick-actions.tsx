@@ -6,7 +6,17 @@ import { CheckCircle, XCircle } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { approveJobAction, rejectJobAction } from "@/features/admin/actions/admin-actions"
 
-export function AdminJobQuickActions({ jobId, locale }: { jobId: number; locale: string }) {
+export function AdminJobQuickActions({
+  jobId,
+  locale,
+  status,
+  showReject = true,
+}: {
+  jobId: number
+  locale: string
+  status?: string
+  showReject?: boolean
+}) {
   const t = useTranslations("Admin.jobs")
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -16,6 +26,10 @@ export function AdminJobQuickActions({ jobId, locale }: { jobId: number; locale:
       await fn()
       router.refresh()
     })
+  }
+
+  if (status && status !== "pending") {
+    return <span className="text-xs text-[#9CA3AF]">—</span>
   }
 
   return (
@@ -29,15 +43,17 @@ export function AdminJobQuickActions({ jobId, locale }: { jobId: number; locale:
         <CheckCircle size={13} />
         {t("approve")}
       </button>
-      <button
-        type="button"
-        disabled={pending}
-        onClick={() => run(() => rejectJobAction(jobId, locale))}
-        className="inline-flex items-center gap-1 rounded-[8px] bg-[#FEE2E2] px-3 py-1.5 text-[12px] font-semibold text-[#991B1B] hover:bg-[#FECACA] disabled:opacity-50"
-      >
-        <XCircle size={13} />
-        {t("reject")}
-      </button>
+      {showReject ? (
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() => run(() => rejectJobAction(jobId, locale))}
+          className="inline-flex items-center gap-1 rounded-[8px] bg-[#FEE2E2] px-3 py-1.5 text-[12px] font-semibold text-[#991B1B] hover:bg-[#FECACA] disabled:opacity-50"
+        >
+          <XCircle size={13} />
+          {t("reject")}
+        </button>
+      ) : null}
     </div>
   )
 }

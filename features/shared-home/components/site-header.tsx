@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Image from "next/image"
-import { Bell, ChevronDown, Check, Menu, User } from "lucide-react"
+import { Bell, ChevronDown, Check, Menu, User as UserIcon } from "lucide-react"
 import { useLocale, useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { PrimaryButton } from "@/components/ui/primary-button"
@@ -134,7 +134,7 @@ export function SiteHeader({
       console.error("Auth check failed:", error)
       setAuthState({ isLoggedIn: false, user: null, checked: true })
     }
-  }, [currentLocale])
+  }, [])
 
   React.useEffect(() => {
     if (initialIsLoggedIn !== undefined) {
@@ -269,103 +269,16 @@ export function SiteHeader({
 
       <div className="relative z-50 mx-auto flex h-[88px] max-w-[1512px] items-center justify-between gap-3 px-4 sm:px-6 lg:h-[128px] lg:gap-6 lg:px-[100px]">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="h-10 w-10 shrink-0 rounded-[12px] border-[#40A0CA]/50 bg-transparent text-white hover:bg-white/10 lg:hidden"
-                aria-label={isRTL ? "فتح القائمة" : "Open menu"}
-              >
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent
-              side={isRTL ? "right" : "left"}
-              className="flex w-[min(100vw,320px)] flex-col border-[#40A0CA]/20 bg-[#001222] p-0 text-white"
-            >
-              <SheetTitle className="sr-only">{isRTL ? "القائمة" : "Navigation Menu"}</SheetTitle>
-              <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-                <Link href="/" onClick={closeMobileMenu} aria-label={t("brand")} className="flex shrink-0 items-center gap-2 relative z-50">
-                  <Image src="/home/hero/hero-logo.svg" alt={t("brand")} width={48} height={48} className="h-11 w-11" />
-                  <span className="text-sm font-semibold tracking-tight text-white">{t("brand")}</span>
-                </Link>
-                <SheetClose asChild>
-                  <Button variant="ghost" size="icon" className="text-white hover:bg-white/10">
-                    <span className="sr-only">{isRTL ? "إغلاق" : "Close"}</span>
-                    <span className="text-xl leading-none">×</span>
-                  </Button>
-                </SheetClose>
-              </div>
-
-              <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-4 py-4">
-                {NAV_ITEMS.map((item) => (
-                  <Link
-                    key={item.key}
-                    href={item.href}
-                    onClick={closeMobileMenu}
-                    className={cn(
-                      "rounded-[10px] px-4 py-3 text-[16px] leading-relaxed font-normal transition-colors hover:bg-white/10",
-                      activeNav === item.key ? "bg-[#40A0CA]/20 font-semibold text-[#7CCEF3]" : "text-white"
-                    )}
-                  >
-                    {t(`nav.${item.key}`)}
-                  </Link>
-                ))}
-              </nav>
-
-              <div className="space-y-3 border-t border-white/10 px-4 py-5">
-                <p className="px-1 text-[12px] font-medium text-white/60">{isRTL ? "اللغة" : "Language"}</p>
-                <div className="flex flex-col gap-1">
-                  {LOCALE_OPTIONS.map((option) => (
-                    <Link
-                      key={option.locale}
-                      locale={option.locale}
-                      href={pathname}
-                      onClick={closeMobileMenu}
-                      className={cn(
-                        "flex items-center justify-between rounded-[10px] px-4 py-2.5 text-[15px] leading-relaxed transition-colors hover:bg-white/10",
-                        option.locale === currentLocale && "bg-[#40A0CA]/20 font-semibold text-[#7CCEF3]"
-                      )}
-                    >
-                      <span className="flex items-center gap-2">
-                        <span>{option.flag}</span>
-                        {option.label}
-                      </span>
-                      {option.locale === currentLocale && <Check className="h-4 w-4 shrink-0" />}
-                    </Link>
-                  ))}
-                </div>
-
-                {isLoggedIn ? (
-                  <Link href="/dashboard" onClick={closeMobileMenu} className="block">
-                    <PrimaryButton className="h-[48px] w-full text-[16px] font-medium">
-                      {isRTL ? "لوحة التحكم" : "Dashboard"}
-                    </PrimaryButton>
-                  </Link>
-                ) : (
-                  <Link href="/sign-in" onClick={closeMobileMenu} className="block">
-                    <PrimaryButton className="h-[48px] w-full text-[16px] font-medium">
-                      {t("login")}
-                    </PrimaryButton>
-                  </Link>
-                )}
-              </div>
-            </SheetContent>
-          </Sheet>
-
           <Link href="/" aria-label={t("brand")} className="flex shrink-0 items-center gap-2 sm:gap-3 relative z-50">
             <Image
               src="/home/hero/hero-logo.svg"
               alt={t("brand")}
-              width={64}
-              height={64}
-              className="h-11 w-11 sm:h-12 sm:w-12 lg:h-16 lg:w-16"
+              width={220}
+              height={88}
+              className="h-[56px] w-auto sm:h-[72px] lg:h-[92px]"
               loading="eager"
               priority
             />
-         
           </Link>
         </div>
 
@@ -499,7 +412,7 @@ export function SiteHeader({
                       className="h-full w-full rounded-full object-cover"
                     />
                   ) : (
-                    <User className="h-5 w-5 text-[#006EA8] lg:h-6 lg:w-6" />
+                    <UserIcon className="h-5 w-5 text-[#006EA8] lg:h-6 lg:w-6" />
                   )}
                 </div>
               </div>
@@ -511,6 +424,92 @@ export function SiteHeader({
               </PrimaryButton>
             </Link>
           )}
+
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 shrink-0 rounded-[12px] border-white/20 bg-white/5 text-white hover:bg-white/10 lg:hidden shadow-sm"
+                aria-label={isRTL ? "فتح القائمة" : "Open menu"}
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent
+              side={isRTL ? "left" : "right"}
+              className="flex w-[min(100vw,320px)] flex-col border-[#40A0CA]/20 bg-[#001222] p-0 text-white"
+            >
+              <SheetTitle className="sr-only">{isRTL ? "القائمة" : "Navigation Menu"}</SheetTitle>
+              <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+                <Link href="/" onClick={closeMobileMenu} aria-label={t("brand")} className="flex shrink-0 items-center gap-2 relative z-50">
+                  <Image src="/home/hero/hero-logo.svg" alt={t("brand")} width={48} height={48} className="h-11 w-auto" />
+                  <span className="text-sm font-semibold tracking-tight text-white">{t("brand")}</span>
+                </Link>
+                <SheetClose asChild>
+                  <Button variant="ghost" size="icon" className="text-white hover:bg-white/10">
+                    <span className="sr-only">{isRTL ? "إغلاق" : "Close"}</span>
+                    <span className="text-xl leading-none">×</span>
+                  </Button>
+                </SheetClose>
+              </div>
+
+              <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-4 py-4">
+                {NAV_ITEMS.map((item) => (
+                  <Link
+                    key={item.key}
+                    href={item.href}
+                    onClick={closeMobileMenu}
+                    className={cn(
+                      "rounded-[10px] px-4 py-3 text-[16px] leading-relaxed font-normal transition-colors hover:bg-white/10",
+                      activeNav === item.key ? "bg-[#40A0CA]/20 font-semibold text-[#7CCEF3]" : "text-white"
+                    )}
+                  >
+                    {t(`nav.${item.key}`)}
+                  </Link>
+                ))}
+              </nav>
+
+              <div className="space-y-3 border-t border-white/10 px-4 py-5">
+                <p className="px-1 text-[12px] font-medium text-white/60">{isRTL ? "اللغة" : "Language"}</p>
+                <div className="flex flex-col gap-1">
+                  {LOCALE_OPTIONS.map((option) => (
+                    <Link
+                      key={option.locale}
+                      locale={option.locale}
+                      href={pathname}
+                      onClick={closeMobileMenu}
+                      className={cn(
+                        "flex items-center justify-between rounded-[10px] px-4 py-2.5 text-[15px] leading-relaxed transition-colors hover:bg-white/10",
+                        option.locale === currentLocale && "bg-[#40A0CA]/20 font-semibold text-[#7CCEF3]"
+                      )}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span>{option.flag}</span>
+                        {option.label}
+                      </span>
+                      {option.locale === currentLocale && <Check className="h-4 w-4 shrink-0" />}
+                    </Link>
+                  ))}
+                </div>
+
+                {isLoggedIn ? (
+                  <Link href="/dashboard" onClick={closeMobileMenu} className="block">
+                    <PrimaryButton className="h-[48px] w-full text-[16px] font-medium">
+                      {isRTL ? "لوحة التحكم" : "Dashboard"}
+                    </PrimaryButton>
+                  </Link>
+                ) : (
+                  <Link href="/sign-in" onClick={closeMobileMenu} className="block">
+                    <PrimaryButton className="h-[48px] w-full text-[16px] font-medium">
+                      {t("login")}
+                    </PrimaryButton>
+                  </Link>
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </header>

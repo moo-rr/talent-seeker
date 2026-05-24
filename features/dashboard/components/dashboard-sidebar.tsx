@@ -161,6 +161,16 @@ function SidebarNav({
             label: isRTL ? "صفحة من نحن" : "About Page",
             href: `/${locale}/dashboard/admin/about`,
           },
+          {
+            icon: "/dashboard/tickets.svg",
+            label: isRTL ? "الأخبار" : "News",
+            href: `/${locale}/dashboard/admin/news`,
+          },
+          {
+            icon: "/dashboard/education_Info.svg",
+            label: isRTL ? "الإشعارات" : "Notifications",
+            href: `/${locale}/dashboard/admin/notifications`,
+          },
           { icon: "/dashboard/favourites.svg", label: isRTL ? "الإعدادات" : "Settings", href: `/${locale}/dashboard/admin/settings` },
         ]
       default:

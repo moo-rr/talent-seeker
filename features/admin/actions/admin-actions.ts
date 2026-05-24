@@ -53,10 +53,10 @@ export async function approveJobAction(jobId: number, locale: string) {
   }
 }
 
-export async function rejectJobAction(jobId: number, locale: string) {
+export async function rejectJobAction(jobId: number, locale: string, reason?: string) {
   try {
     const { token } = await requireAdmin(locale)
-    await rejectJob(jobId, token, locale)
+    await rejectJob(jobId, token, locale, reason)
     revalidateAdmin(locale)
     return { ok: true as const }
   } catch (err) {
@@ -121,7 +121,7 @@ export async function saveNewsAction(formData: FormData, locale: string, newsId?
     } else {
       await createNewsItem(formData, token, locale)
     }
-    revalidatePath(`/${locale}/dashboard/admin/settings`)
+    revalidatePath(`/${locale}/dashboard/admin/news`)
     revalidatePath(`/${locale}/news`)
     return { ok: true as const }
   } catch (err) {
@@ -134,7 +134,8 @@ export async function deleteNewsAction(id: number, locale: string) {
   try {
     const { token } = await requireAdmin(locale)
     await deleteNewsItem(id, token, locale)
-    revalidatePath(`/${locale}/dashboard/admin/settings`)
+    revalidatePath(`/${locale}/dashboard/admin/news`)
+    revalidatePath(`/${locale}/news`)
     return { ok: true as const }
   } catch (err) {
     const message = err instanceof ApiError ? err.message : "Failed to delete news"
@@ -171,7 +172,7 @@ export async function markNotificationReadAction(id: number, locale: string) {
   try {
     const { token } = await requireAdmin(locale)
     await markAsRead(id, token, locale)
-    revalidatePath(`/${locale}/dashboard/admin/settings`)
+    revalidatePath(`/${locale}/dashboard/admin/notifications`)
     return { ok: true as const }
   } catch {
     return { ok: false as const, message: "Failed" }
@@ -182,7 +183,7 @@ export async function markAllNotificationsReadAction(locale: string) {
   try {
     const { token } = await requireAdmin(locale)
     await markAllAsRead(token, locale)
-    revalidatePath(`/${locale}/dashboard/admin/settings`)
+    revalidatePath(`/${locale}/dashboard/admin/notifications`)
     return { ok: true as const }
   } catch {
     return { ok: false as const, message: "Failed" }
@@ -193,7 +194,7 @@ export async function deleteNotificationAction(id: number, locale: string) {
   try {
     const { token } = await requireAdmin(locale)
     await deleteNotification(id, token, locale)
-    revalidatePath(`/${locale}/dashboard/admin/settings`)
+    revalidatePath(`/${locale}/dashboard/admin/notifications`)
     return { ok: true as const }
   } catch {
     return { ok: false as const, message: "Failed" }

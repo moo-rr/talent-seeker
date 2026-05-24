@@ -696,8 +696,45 @@
         "approved": "منشورة",
         "rejected": "مرفوضة"
       },
+      "summary": {
+        "total": "إجمالي الوظائف",
+        "pending": "معلقة",
+        "published": "منشورة",
+        "rejected": "مرفوضة"
+      },
+      "viewDetails": "عرض التفاصيل",
+      "viewApplications": "عرض الطلبات",
+      "backToJobs": "العودة إلى الوظائف",
+      "details": "تفاصيل الوظيفة",
+      "companyLabel": "الشركة",
+      "locationLabel": "الموقع",
+      "postedOnLabel": "تاريخ النشر",
+      "deadlineLabel": "آخر موعد للتقديم",
+      "applicationsLabel": "عدد الطلبات",
+      "rejectReasonTitle": "سبب الرفض",
+      "rejectReasonHint": "يمكنك إضافة سبب الرفض قبل تأكيد العملية.",
+      "reasonLabel": "سبب الرفض",
+      "reasonPlaceholder": "اكتب سبب الرفض هنا",
+      "rejecting": "جارٍ الرفض",
       "approve": "قبول",
       "reject": "رفض",
+      "applicationsPage": {
+        "title": "طلبات التوظيف",
+        "backToDetail": "العودة للتفاصيل",
+        "backToJobs": "العودة إلى وظائف الإدارة",
+        "summary": "عدد المتقدمين",
+        "candidate": "المتقدم",
+        "statusLabel": "الحالة",
+        "appliedAt": "تاريخ التقديم",
+        "email": "البريد الإلكتروني",
+        "empty": "لا توجد طلبات على هذه الوظيفة بعد.",
+        "unknownCandidate": "متقدم غير مسمى",
+        "status": {
+          "pending": "قيد الانتظار",
+          "accepted": "مقبول",
+          "rejected": "مرفوض"
+        }
+      },
       "empty": "لا توجد وظائف",
       "error": "تعذر تنفيذ الإجراء"
     },

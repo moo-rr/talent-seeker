@@ -6,6 +6,10 @@ import type { Job } from "@/lib/api/types"
 import { AdminJobsPanel } from "@/features/admin/components/admin-jobs-panel"
 import { AdminPageLayout } from "@/features/admin/components/admin-page-layout"
 
+const VALID_TABS = ["pending", "approved", "rejected", "all"] as const
+
+type Tab = (typeof VALID_TABS)[number]
+
 export default async function AdminJobsPage({
   params,
   searchParams,
@@ -44,10 +48,8 @@ export default async function AdminJobsPage({
     jobs = []
   }
 
-  const initialTab =
-    statusParam === "pending" || statusParam === "approved" || statusParam === "rejected"
-      ? statusParam
-      : "pending"
+  const initialTab: Tab =
+    statusParam && VALID_TABS.includes(statusParam as Tab) ? (statusParam as Tab) : "pending"
 
   return (
     <AdminPageLayout title={t("title")} description={t("description")}>

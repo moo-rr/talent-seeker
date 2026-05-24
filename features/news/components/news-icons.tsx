@@ -4,7 +4,7 @@ type IconProps = { className?: string }
 
 export function NewsExportIcon({ className }: IconProps) {
   return (
-    <svg className={cn("h-6 w-6 shrink-0", className)} viewBox="0 0 24 24" fill="none" aria-hidden>
+    <svg className={cn("h-6 w-6 shrink-0 rtl:-scale-x-100", className)} viewBox="0 0 24 24" fill="none" aria-hidden>
       <path
         d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12"
         stroke="currentColor"

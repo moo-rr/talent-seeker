@@ -6,7 +6,7 @@ import { getNewsItem } from "@/lib/api/services/news.service"
 import { getNewsForLocale } from "@/features/news/lib/news-fallback"
 import { formatNewsDate } from "@/features/news/lib/format-news-date"
 import { resolveNewsImageUrl } from "@/features/news/lib/resolve-news-image"
-import { NewsCalendarIcon } from "@/features/news/components/news-icons"
+import { NewsCalendarIcon, NewsEyebrowGlobe } from "@/features/news/components/news-icons"
 import { NewsDetailSidebar } from "@/features/news/components/news-detail-sidebar"
 import { RelatedNewsCard } from "@/features/news/components/related-news-card"
 import { JobDetailShare } from "@/features/jobs/components/job-detail-share"
@@ -64,7 +64,7 @@ export async function NewsDetailPage({ slug }: NewsDetailPageProps) {
   const heroRemote = heroSrc.startsWith("http")
 
   return (
-    <div className="bg-white pt-8 sm:pt-12 lg:pt-[71px]">
+    <div className="bg-white pt-8 pb-12 sm:pt-12 sm:pb-16 lg:pt-[71px] lg:pb-[82px]">
       <div className="mx-auto max-w-[1312px] px-4 sm:px-6 lg:px-8">
         <Link
           href="/news"
@@ -89,6 +89,10 @@ export async function NewsDetailPage({ slug }: NewsDetailPageProps) {
               </div>
 
               <div className="flex flex-col gap-8">
+                <div className="inline-flex items-center gap-2 rounded-lg bg-[rgba(64,160,202,0.25)] px-4 py-2 text-[12px] leading-[1.16] text-[#002B46] w-fit">
+                  <NewsEyebrowGlobe />
+                  {newsT("eyebrow")}
+                </div>
                 <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
                   <h1 className="text-[24px] font-bold leading-[1.16] text-[#171717] sm:text-[28px]">
                     {article.title}

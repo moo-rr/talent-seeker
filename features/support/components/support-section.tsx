@@ -11,13 +11,17 @@ export async function SupportSection() {
     <SectionShell stagger={false} className="overflow-visible bg-white py-12 sm:py-14 lg:py-[72px]">
       <div className="relative isolate overflow-hidden rounded-[32px] bg-[url('/contact/button-noise.png'),linear-gradient(180deg,#398DB3_0%,#2D7494_100%)] bg-[length:200px_200px,auto] bg-blend-[plus-lighter,normal] px-6 py-12 text-white shadow-[0_0_0_5px_#FFFFFF,0_0_0_4px_#C2E3FA,0_4px_5px_rgba(75,183,231,0.15),0_10px_13px_rgba(75,183,231,0.22),0_24px_32px_rgba(75,183,231,0.19),0_42px_107px_rgba(123,190,255,0.34)] sm:px-10 sm:py-16 lg:px-14 lg:py-[82px]">
         <div
-          className="pointer-events-none absolute inset-0 bg-[url('/contact/button-noise.png')] bg-[length:420px_420px] opacity-[0.15] mix-blend-overlay"
+          className="pointer-events-none absolute inset-0 opacity-[0.15] mix-blend-overlay"
+          style={{
+            backgroundImage: "url('/contact/button-noise.png')",
+            backgroundSize: "420px 420px",
+          }}
           aria-hidden
         />
 
         <div className="relative z-[1] flex flex-col items-center gap-6 text-center">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-[13px] font-semibold tracking-[0.06em] text-white/95">
-            <Image src="/footer/icon-link.svg" alt="" width={16} height={16} aria-hidden />
+            <Image src="/footer/icon-link.svg" alt="" width={16} height={16}  aria-hidden />
             <span>{t("eyebrow")}</span>
           </div>
 
@@ -30,21 +34,23 @@ export async function SupportSection() {
             </p>
           </div>
 
-          <div className="mt-2 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center">
-            <Link
-              href="/faqs"
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[12px] border border-white/20 bg-white px-5 py-3 text-sm font-semibold text-[#006EA8] shadow-[0_10px_12px_rgba(0,0,0,0.08)] transition hover:bg-[#F4FBFF]"
-            >
-              <Image src="/faqs.svg" alt="" width={18} height={18} aria-hidden />
-              <span>{t("actions.faqs")}</span>
-            </Link>
-
-            <PrimaryButton asChild className="h-11 min-w-[210px] px-5 text-sm font-semibold">
-              <Link href="/contact">
-                <Image src="/contact.svg" alt="" width={18} height={18} aria-hidden />
+          <div className="mt-6 flex w-full  items-center justify-center gap-4 flex-row">
+            <PrimaryButton asChild className="h-[44px] w-full max-w-[180px] rounded-xl">
+              <Link href="/contact" className="inline-flex items-center justify-center gap-2">
                 <span>{t("actions.contact")}</span>
+                <Image src="/contact.svg" alt="" width={20} height={20} aria-hidden />
               </Link>
             </PrimaryButton>
+
+            <Link
+              href="/faqs"
+              className="inline-flex h-[44px] w-full max-w-[180px] items-center justify-center gap-2 rounded-xl bg-white px-6 text-[16px] font-medium shadow-[inset_0_1px_4px_2px_#C2DDFF] sm:w-auto transition-transform hover:scale-105"
+            >
+              <span className="bg-[linear-gradient(180deg,#006EA8_0%,#005685_100%)] bg-clip-text text-transparent">
+                {t("actions.faqs")}
+              </span>
+              <Image src="/faqs.svg" alt="" width={20} height={20} aria-hidden />
+            </Link>
           </div>
         </div>
       </div>

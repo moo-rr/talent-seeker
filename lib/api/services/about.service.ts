@@ -58,12 +58,20 @@ function normalizeFeatures(raw: unknown, locale = "ar"): AboutFeature[] {
 
       const row = item as Record<string, unknown>
       const title = pickLocalizedString(row.title, locale)
-      const description = pickLocalizedString(row.description ?? row.description_en ?? row.description_ar, locale)
+      const description = pickLocalizedString(
+        row.description ?? row.description_en ?? row.description_ar,
+        locale
+      )
 
       if (!title && !description) return null
 
       return {
-        id: typeof row.id === "number" ? row.id : typeof row.id === "string" ? row.id : index + 1,
+        id:
+          typeof row.id === "number"
+            ? row.id
+            : typeof row.id === "string"
+              ? row.id
+              : index + 1,
         title: title || "—",
         description: description || "",
       }
@@ -76,21 +84,72 @@ function normalizeAbout(raw: unknown, locale = "ar"): AboutPageContent | null {
   if (!data) return null
 
   const title = pickLocalizedString(data.title, locale)
-  const descriptionLeft = pickLocalizedString(data.description_left ?? data.descriptionLeft ?? data.description, locale)
-  const descriptionRight = pickLocalizedString(data.description_right ?? data.descriptionRight ?? data.description_left, locale)
-  const secondTitle = pickLocalizedString(data.second_title ?? data.secondTitle ?? data.title, locale)
-  const secondDescription = pickLocalizedString(data.second_description ?? data.secondDescription ?? data.description_right ?? data.description_left, locale)
-  const image = typeof data.image === "string" ? data.image : typeof data.image_url === "string" ? data.image_url : null
+
+  const descriptionLeft = pickLocalizedString(
+    data.description_left ?? data.descriptionLeft ?? data.description,
+    locale
+  )
+  const descriptionRight = pickLocalizedString(
+    data.description_right ?? data.descriptionRight ?? data.description_left,
+    locale
+  )
+
+  // The API returns secondSection as a nested object
+  const secondSection = data.secondSection as Record<string, unknown> | undefined
+
+  const secondTitle = pickLocalizedString(
+    data.second_title ?? data.secondTitle ?? secondSection?.title ?? data.title,
+    locale
+  )
+  const secondDescription = pickLocalizedString(
+    data.second_description ??
+      data.secondDescription ??
+      secondSection?.description ??
+      data.description_right ??
+      data.description_left,
+    locale
+  )
+
+  // image: API returns imageUrl (not image)
+  const image =
+    typeof data.imageUrl === "string"
+      ? data.imageUrl
+      : typeof data.image === "string"
+        ? data.image
+        : typeof data.image_url === "string"
+          ? data.image_url
+          : null
+
+  // secondImage: from secondSection.imageUrl
   const secondImage =
-    typeof data.second_image === "string"
-      ? data.second_image
-      : typeof data.second_image_url === "string"
-        ? data.second_image_url
+    typeof secondSection?.imageUrl === "string"
+      ? secondSection.imageUrl
+      : typeof data.second_image === "string"
+        ? data.second_image
+        : typeof data.second_image_url === "string"
+          ? data.second_image_url
+          : typeof data.secondImage === "string"
+            ? data.secondImage
+            : null
+
+  // video: API returns videoUrl
+  const video =
+    typeof data.videoUrl === "string"
+      ? data.videoUrl
+      : typeof data.video === "string"
+        ? data.video
         : null
-  const video = typeof data.video === "string" ? data.video : null
+
   const features = normalizeFeatures(data.features, locale)
 
-  if (!title && !descriptionLeft && !descriptionRight && !secondTitle && !secondDescription && features.length === 0) {
+  if (
+    !title &&
+    !descriptionLeft &&
+    !descriptionRight &&
+    !secondTitle &&
+    !secondDescription &&
+    features.length === 0
+  ) {
     return null
   }
 
@@ -108,30 +167,38 @@ function normalizeAbout(raw: unknown, locale = "ar"): AboutPageContent | null {
 }
 
 export async function getAbout(locale = "ar"): Promise<AboutPageContent | null> {
-  const endpoints = ["/public/about", "/about"]
+  // Try authenticated-style endpoint first, then public
+  const endpoints = ["/about", "/public/about"]
 
   for (const endpoint of endpoints) {
     try {
       const response = await api.get<unknown>(endpoint, {
         locale,
-        cache: "force-cache",
+        cache: "no-store",
       })
       const normalized = normalizeAbout(response, locale)
       if (normalized) return normalized
     } catch (err) {
-      console.error(err)
+      console.error(`[getAbout] ${endpoint} failed:`, err)
     }
   }
 
   return null
 }
 
-export async function getAdminAbout(token: string, locale = "ar"): Promise<AboutPageContent | null> {
+export async function getAdminAbout(
+  token: string,
+  locale = "ar"
+): Promise<AboutPageContent | null> {
   const response = await api.get<unknown>("/about", { token, locale })
   return normalizeAbout(response, locale)
 }
 
-export async function updateAbout(formData: FormData, token: string, locale = "ar"): Promise<AboutPageContent | null> {
+export async function updateAbout(
+  formData: FormData,
+  token: string,
+  locale = "ar"
+): Promise<AboutPageContent | null> {
   const response = await api.post<ApiResponse<unknown>>("/about", formData, { token, locale })
   return normalizeAbout(response, locale)
 }

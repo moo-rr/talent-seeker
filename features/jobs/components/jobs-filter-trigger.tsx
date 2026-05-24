@@ -28,7 +28,7 @@ export function JobsFilterTrigger({
         className
       )}
     >
-      <Image src="/jobs/icon-filter.svg" alt="" width={18} height={18} className="shrink-0" />
+      <Image src="/filter.svg" alt="" width={18} height={20} className="shrink-0" />
       <span>{label}</span>
       {activeCount > 0 ? (
         <span className="absolute -top-1.5 -end-1.5 flex size-5 items-center justify-center rounded-full bg-white text-[11px] font-bold text-[#006EA8] shadow-sm">

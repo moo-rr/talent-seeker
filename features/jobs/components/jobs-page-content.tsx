@@ -1,7 +1,7 @@
 "use client"
 
-import { useMemo, useState, type ReactNode } from "react"
-import { CalendarDays, ChevronDown, Filter, MoveUpRight, XCircle } from "lucide-react"
+import { useMemo, useState } from "react"
+import { Filter, MoveUpRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 
@@ -106,7 +106,7 @@ export function JobsPageContent({
               </div>
               <Button className="mt-5 h-[44px] w-full rounded-[12px] border border-white bg-[url('/contact/button-noise.png'),linear-gradient(180deg,#006EA8_0%,#005685_100%)] bg-size-[300px_300px,auto] bg-blend-overlay text-[20px] text-white shadow-[0_0_0_5px_rgba(255,255,255,1),0_0_0_4px_rgba(232,242,255,1),0_4px_5px_rgba(0,86,133,0.15),0_10px_13px_rgba(0,86,133,0.22),0_25px_32px_rgba(0,86,133,0.19),0_42px_107px_rgba(123,190,255,0.34),inset_0_1px_4px_2px_rgba(194,221,255,1),inset_0_1px_18px_2px_rgba(232,242,255,1)] hover:brightness-105">
                 {moreDetailsLabel}
-                <MoveUpRight className="h-5 w-5" />
+                <MoveUpRight className="h-5 w-5 rtl:-scale-x-100" />
               </Button>
             </article>
             </StaggerItem>

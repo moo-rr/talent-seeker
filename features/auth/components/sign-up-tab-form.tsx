@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { useForm } from "react-hook-form"
 import { useAuth } from "@/hooks/use-auth"
@@ -17,6 +17,7 @@ type FormValues = {
   password_confirmation: string
   company_name?: string
   accept_terms: boolean
+  country_id: string
 }
 
 type Props = {
@@ -33,6 +34,13 @@ type Props = {
   showPasswordLabel: string
   hidePasswordLabel: string
   submitLabel: string
+}
+
+type CountryOption = {
+  id: number
+  name: string
+  code: string
+  flag?: string
 }
 
 export function SignUpTabForm({
@@ -52,15 +60,42 @@ export function SignUpTabForm({
 }: Props) {
   const [activeTab, setActiveTab] = useState<"user" | "company">("user")
   const [showPassword, setShowPassword] = useState(false)
+  const [countries, setCountries] = useState<CountryOption[]>([])
   const { signUp, loading, error } = useAuth()
   const locale = useLocale()
   const isRTL = locale === "ar"
 
-  const { register, handleSubmit, watch } = useForm<FormValues>({
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<FormValues>({
     defaultValues: { accept_terms: true },
   })
 
+  // Fetch countries
+  useEffect(() => {
+    async function loadCountries() {
+      try {
+        const res = await fetch(`/api/countries?locale=${locale}`)
+        const json = await res.json()
+        if (json && Array.isArray(json.data)) {
+          setCountries(json.data)
+        }
+      } catch (err) {
+        console.error("Error loading countries:", err)
+      }
+    }
+    loadCountries()
+  }, [locale])
+
   const acceptTerms = watch("accept_terms")
+  const password = watch("password")
+  const passwordConfirmation = watch("password_confirmation")
+
+  // Password confirmation check
+  const passwordsMatch = password === passwordConfirmation
 
   const baseTabClassName =
     "inline-flex h-[48px] min-h-[48px] flex-1 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition-all duration-200 sm:h-[52px] sm:flex-none sm:w-[min(227px,48%)] sm:px-4 sm:text-base"
@@ -70,7 +105,7 @@ export function SignUpTabForm({
     "border-[#6b87a2] bg-[#02223b]/65 text-[#d9eef9] hover:bg-[#033a62]/70"
 
   async function onSubmit(values: FormValues) {
-    if (values.password !== values.password_confirmation) return
+    if (!passwordsMatch) return
     if (!values.accept_terms) return
 
     const displayName =
@@ -86,7 +121,7 @@ export function SignUpTabForm({
       password_confirmation: values.password_confirmation,
       type: activeTab,
       company_name: activeTab === "company" ? values.company_name : undefined,
-      country_id: 1,
+      country_id: values.country_id ? Number(values.country_id) : 1,
       accept_terms_and_privacy: values.accept_terms,
     })
   }
@@ -122,64 +157,141 @@ export function SignUpTabForm({
 
       <AuthFieldGroup>
         {activeTab === "company" && (
+          <div className="space-y-1">
+            <label className="flex h-[52px] items-center gap-2 border-b border-white py-4">
+              <Image src="/auth/company.svg" alt="" width={20} height={20} aria-hidden />
+              <input
+                {...register("company_name", { required: activeTab === "company" })}
+                placeholder={companyNamePlaceholder}
+                className="w-full bg-transparent text-base text-white placeholder:text-white/60 focus:outline-none"
+              />
+            </label>
+            {errors.company_name && (
+              <span className="text-xs text-red-300">
+                {isRTL ? "اسم الشركة مطلوب" : "Company name is required"}
+              </span>
+            )}
+          </div>
+        )}
+
+        <div className="space-y-1">
           <label className="flex h-[52px] items-center gap-2 border-b border-white py-4">
-            <Image src="/auth/company.svg" alt="" width={20} height={20} aria-hidden />
+            <Image src="/auth/user.svg" alt="" width={20} height={20} aria-hidden />
             <input
-              {...register("company_name", { required: activeTab === "company" })}
-              placeholder={companyNamePlaceholder}
-              className="w-full bg-transparent text-base text-white placeholder:text-white focus:outline-none"
+              {...register("name", { required: true })}
+              placeholder={fullNamePlaceholder}
+              className="w-full bg-transparent text-base text-white placeholder:text-white/60 focus:outline-none"
             />
           </label>
-        )}
-        <label className="flex h-[52px] items-center gap-2 border-b border-white py-4">
-          <Image src="/auth/user.svg" alt="" width={20} height={20} aria-hidden />
-          <input
-            {...register("name", { required: true })}
-            placeholder={fullNamePlaceholder}
-            className="w-full bg-transparent text-base text-white placeholder:text-white focus:outline-none"
+          {errors.name && (
+            <span className="text-xs text-red-300">
+              {isRTL ? "الاسم مطلوب" : "Name is required"}
+            </span>
+          )}
+        </div>
+
+        <div className="space-y-1">
+          <label className="flex h-[52px] items-center gap-2 border-b border-white py-4">
+            <Image src="/auth/email.svg" alt="" width={20} height={20} aria-hidden />
+            <input
+              {...register("email", {
+                required: true,
+                pattern: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+              })}
+              type="email"
+              placeholder={emailPlaceholder}
+              className="w-full bg-transparent text-base text-white placeholder:text-white/60 focus:outline-none"
+            />
+          </label>
+          {errors.email && (
+            <span className="text-xs text-red-300">
+              {isRTL ? "البريد الإلكتروني غير صالح" : "Invalid email address"}
+            </span>
+          )}
+        </div>
+
+        {/* Country Selector */}
+        <div className="space-y-1">
+          <label className="flex h-[52px] items-center gap-2 border-b border-white py-4 text-white">
+            <span className="text-xl">🌐</span>
+            <select
+              {...register("country_id", { required: true })}
+              className="w-full bg-transparent text-base text-white focus:outline-none [&_option]:bg-[#041d33] [&_option]:text-white"
+            >
+              <option value="" disabled hidden>
+                {isRTL ? "اختر الدولة" : "Select Country"}
+              </option>
+              {countries.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          {errors.country_id && (
+            <span className="text-xs text-red-300">
+              {isRTL ? "يرجى اختيار الدولة" : "Please select country"}
+            </span>
+          )}
+        </div>
+
+        <div className="space-y-1">
+          <AuthTelInput
+            {...register("phone", { required: true })}
+            placeholder={phonePlaceholder}
           />
-        </label>
-        <label className="flex h-[52px] items-center gap-2 border-b border-white py-4">
-          <Image src="/auth/email.svg" alt="" width={20} height={20} aria-hidden />
-          <input
-            {...register("email", { required: true })}
-            type="email"
-            placeholder={emailPlaceholder}
-            className="w-full bg-transparent text-base text-white placeholder:text-white focus:outline-none"
-          />
-        </label>
-        <AuthTelInput
-          {...register("phone", { required: true })}
-          placeholder={phonePlaceholder}
-        />
-        <label className="flex h-[52px] items-center justify-between gap-2 border-b border-white py-4">
-          <div className="flex min-w-0 flex-1 items-center gap-2">
+          {errors.phone && (
+            <span className="text-xs text-red-300">
+              {isRTL ? "رقم الهاتف مطلوب" : "Phone number is required"}
+            </span>
+          )}
+        </div>
+
+        <div className="space-y-1">
+          <label className="flex h-[52px] items-center justify-between gap-2 border-b border-white py-4">
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+              <Image src="/auth/password.svg" alt="" width={20} height={20} aria-hidden />
+              <input
+                {...register("password", { required: true, minLength: 6 })}
+                type={showPassword ? "text" : "password"}
+                placeholder={passwordPlaceholder}
+                className="w-full bg-transparent text-base text-white placeholder:text-white/60 focus:outline-none"
+              />
+            </div>
+            <button
+              type="button"
+              className="shrink-0 cursor-pointer"
+              onClick={() => setShowPassword((p) => !p)}
+              aria-label={showPassword ? hidePasswordLabel : showPasswordLabel}
+            >
+              <Image src="/auth/eye.svg" alt="" width={20} height={20} aria-hidden />
+            </button>
+          </label>
+          {errors.password && (
+            <span className="text-xs text-red-300">
+              {isRTL
+                ? "يجب أن تكون كلمة المرور 6 أحرف على الأقل"
+                : "Password must be at least 6 characters"}
+            </span>
+          )}
+        </div>
+
+        <div className="space-y-1">
+          <label className="flex h-[52px] items-center gap-2 border-b border-white py-4">
             <Image src="/auth/password.svg" alt="" width={20} height={20} aria-hidden />
             <input
-              {...register("password", { required: true, minLength: 6 })}
+              {...register("password_confirmation", { required: true })}
               type={showPassword ? "text" : "password"}
-              placeholder={passwordPlaceholder}
-              className="w-full bg-transparent text-base text-white placeholder:text-white focus:outline-none"
+              placeholder={confirmPasswordPlaceholder}
+              className="w-full bg-transparent text-base text-white placeholder:text-white/60 focus:outline-none"
             />
-          </div>
-          <button
-            type="button"
-            className="shrink-0 cursor-pointer"
-            onClick={() => setShowPassword((p) => !p)}
-            aria-label={showPassword ? hidePasswordLabel : showPasswordLabel}
-          >
-            <Image src="/auth/eye.svg" alt="" width={20} height={20} aria-hidden />
-          </button>
-        </label>
-        <label className="flex h-[52px] items-center gap-2 border-b border-white py-4">
-          <Image src="/auth/password.svg" alt="" width={20} height={20} aria-hidden />
-          <input
-            {...register("password_confirmation", { required: true, minLength: 6 })}
-            type={showPassword ? "text" : "password"}
-            placeholder={confirmPasswordPlaceholder}
-            className="w-full bg-transparent text-base text-white placeholder:text-white focus:outline-none"
-          />
-        </label>
+          </label>
+          {passwordConfirmation && !passwordsMatch && (
+            <span className="text-xs text-red-300">
+              {isRTL ? "كلمات المرور غير متطابقة" : "Passwords do not match"}
+            </span>
+          )}
+        </div>
       </AuthFieldGroup>
 
       <label className="flex items-start gap-2 text-sm text-white/90">
@@ -199,10 +311,20 @@ export function SignUpTabForm({
 
       <button
         type="submit"
-        disabled={loading || !acceptTerms}
-        className="w-full rounded-md bg-[#40A0CA] py-3 font-medium text-white disabled:opacity-60"
+        disabled={loading || !acceptTerms || !passwordsMatch}
+        className="w-full rounded-md bg-[#40A0CA] py-3 font-semibold text-white shadow-md transition-all hover:bg-[#3490b8] active:translate-y-px disabled:opacity-60 flex items-center justify-center gap-2"
       >
-        {loading ? "..." : submitLabel}
+        {loading ? (
+          <>
+            <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+            <span>{isRTL ? "جاري التسجيل..." : "Registering..."}</span>
+          </>
+        ) : (
+          submitLabel
+        )}
       </button>
     </form>
   )

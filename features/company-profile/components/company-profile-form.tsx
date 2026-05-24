@@ -51,10 +51,12 @@ type InitialProfileData = {
   phone?: string
   company_name?: string | Record<string, unknown>
   country_id?: number
+  country?: { id?: number }
   city?: { id?: number } | number
   avatar?: string | null
   cover_image?: string | null
   company_type?: { id?: number }
+  company_type_id?: number | string
   ceo_name?: string | Record<string, unknown>
   description?: string | Record<string, unknown>
   postal_code?: string
@@ -183,6 +185,8 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
               (p.description && (p.description as Record<string, unknown>).en) ||
               ""
       );
+      const rawCompanyTypeId = (p as { company_type_id?: number | string }).company_type_id
+      const companyTypeId = p.company_type?.id ?? rawCompanyTypeId
 
       setValue("name", companyName);
       setValue("ceo_name", ceoName);
@@ -190,7 +194,7 @@ export default function CompanyProfileForm({ initialProfile }: { initialProfile?
       setValue("website", p.website || "");
       setValue("postal_code", p.postal_code || "");
       setValue("num_of_employees", String(p.num_of_employees || ""));
-      setValue("company_type_id", String(p.company_type?.id || p.company_type_id || ""));
+      setValue("company_type_id", String(companyTypeId ?? ""));
       setValue("description", descriptionText);
 
       const countryId = p.country_id ?? (p.country && typeof p.country === "object" ? (p.country as { id?: number }).id : undefined) ?? "";

@@ -696,8 +696,45 @@
         "approved": "Veröffentlicht",
         "rejected": "Abgelehnt"
       },
+      "summary": {
+        "total": "Alle Stellen",
+        "pending": "Ausstehend",
+        "published": "Veröffentlicht",
+        "rejected": "Abgelehnt"
+      },
+      "viewDetails": "Details anzeigen",
+      "viewApplications": "Bewerbungen anzeigen",
+      "backToJobs": "Zurück zu den Stellen",
+      "details": "Stellendetails",
+      "companyLabel": "Unternehmen",
+      "locationLabel": "Standort",
+      "postedOnLabel": "Veröffentlicht am",
+      "deadlineLabel": "Frist",
+      "applicationsLabel": "Bewerbungen",
+      "rejectReasonTitle": "Ablehnungsgrund",
+      "rejectReasonHint": "Fügen Sie vor dem Bestätigen einen kurzen Grund hinzu.",
+      "reasonLabel": "Ablehnungsgrund",
+      "reasonPlaceholder": "Schreiben Sie hier den Ablehnungsgrund",
+      "rejecting": "Wird abgelehnt",
       "approve": "Genehmigen",
       "reject": "Ablehnen",
+      "applicationsPage": {
+        "title": "Bewerbungen",
+        "backToDetail": "Zurück zu den Details",
+        "backToJobs": "Zurück zur Admin-Stellen",
+        "summary": "Bewerber",
+        "candidate": "Kandidat",
+        "statusLabel": "Status",
+        "appliedAt": "Bewerbung am",
+        "email": "E-Mail",
+        "empty": "Für diese Stelle gibt es noch keine Bewerbungen.",
+        "unknownCandidate": "Unbenannter Kandidat",
+        "status": {
+          "pending": "Ausstehend",
+          "accepted": "Akzeptiert",
+          "rejected": "Abgelehnt"
+        }
+      },
       "empty": "Keine Stellen",
       "error": "Aktion fehlgeschlagen"
     },

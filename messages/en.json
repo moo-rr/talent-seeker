@@ -696,8 +696,45 @@
         "approved": "Published",
         "rejected": "Rejected"
       },
+      "summary": {
+        "total": "Total jobs",
+        "pending": "Pending",
+        "published": "Published",
+        "rejected": "Rejected"
+      },
+      "viewDetails": "View details",
+      "viewApplications": "View applications",
+      "backToJobs": "Back to jobs",
+      "details": "Job details",
+      "companyLabel": "Company",
+      "locationLabel": "Location",
+      "postedOnLabel": "Posted on",
+      "deadlineLabel": "Deadline",
+      "applicationsLabel": "Applications",
+      "rejectReasonTitle": "Rejection reason",
+      "rejectReasonHint": "Add a short reason before confirming the rejection.",
+      "reasonLabel": "Rejection reason",
+      "reasonPlaceholder": "Write the rejection reason here",
+      "rejecting": "Rejecting",
       "approve": "Approve",
       "reject": "Reject",
+      "applicationsPage": {
+        "title": "Job applications",
+        "backToDetail": "Back to details",
+        "backToJobs": "Back to admin jobs",
+        "summary": "Applicants",
+        "candidate": "Candidate",
+        "statusLabel": "Status",
+        "appliedAt": "Applied at",
+        "email": "Email",
+        "empty": "No applications for this job yet.",
+        "unknownCandidate": "Unnamed candidate",
+        "status": {
+          "pending": "Pending",
+          "accepted": "Accepted",
+          "rejected": "Rejected"
+        }
+      },
       "empty": "No jobs",
       "error": "Action failed"
     },

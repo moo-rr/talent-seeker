@@ -1,4 +1,7 @@
+"use client"
+
 import Image from "next/image"
+import { useState } from "react"
 import { SectionShell, StaggerInView, StaggerItem } from "@/features/shared-home"
 
 type AboutIntroSectionProps = {
@@ -10,6 +13,7 @@ type AboutIntroSectionProps = {
   secondaryImageSrc: string
   featuredImageAlt: string
   secondaryImageAlt: string
+  videoUrl?: string | null
 }
 
 export function AboutIntroSection({
@@ -21,7 +25,9 @@ export function AboutIntroSection({
   secondaryImageSrc,
   featuredImageAlt,
   secondaryImageAlt,
+  videoUrl,
 }: AboutIntroSectionProps) {
+  const [isPlaying, setIsPlaying] = useState(false)
   const isRemoteImage = (src: string) => /^https?:\/\//.test(src)
 
   return (
@@ -30,9 +36,10 @@ export function AboutIntroSection({
         <StaggerItem>
           <div className="grid gap-6 lg:grid-cols-12 lg:items-start">
             <div className="space-y-5 lg:col-span-5">
-              <p className="inline-flex w-fit items-center rounded-[8px] bg-[#eaf4fb] px-3 py-1.5 text-sm font-medium text-[#0f7abd]">
-                {eyebrow}
-              </p>
+              <div className="inline-flex w-fit items-center gap-2 rounded-full bg-[#EAF4FB] px-4 py-2 text-[13px] font-semibold tracking-[0.02em] text-[#0f7abd]">
+                <Image src="/footer/icon-link.svg" alt="" width={16} height={16} aria-hidden />
+                <span>{eyebrow}</span>
+              </div>
               <h1 className="max-w-[560px] text-balance text-[44px] leading-[1.08] font-bold text-[#001222] lg:text-[56px]">
                 {title}
               </h1>
@@ -45,26 +52,61 @@ export function AboutIntroSection({
         </StaggerItem>
 
         <StaggerItem>
-          <div className="relative min-h-[320px] lg:min-h-[390px]">
-            <div className="absolute bottom-0 h-[250px] w-[66%] overflow-hidden rounded-[12px] border border-[#dce9f4] shadow-[0_20px_42px_rgba(0,25,45,0.16)] ltr:left-0 rtl:right-0 lg:h-[300px]">
+          <div className="relative min-h-[400px] lg:min-h-[500px]">
+            <div className="absolute bottom-0 h-[300px] w-[70%] overflow-hidden rounded-[16px] border border-[#dce9f4] shadow-[0_20px_42px_rgba(0,25,45,0.16)] ltr:left-0 rtl:right-0 lg:h-[400px]">
               <Image
                 src={featuredImageSrc}
                 alt={featuredImageAlt}
                 fill
                 unoptimized={isRemoteImage(featuredImageSrc)}
                 className="object-cover"
-                sizes="(min-width: 1024px) 48vw, 100vw"
+                sizes="(min-width: 1024px) 50vw, 100vw"
               />
             </div>
-            <div className="absolute top-[55px] h-[190px] w-[50%] overflow-hidden rounded-[12px] border-4 border-white shadow-[0_22px_40px_rgba(0,25,45,0.22)] ltr:right-[2%] rtl:left-[2%] lg:h-[235px]">
-              <Image
-                src={secondaryImageSrc}
-                alt={secondaryImageAlt}
-                fill
-                unoptimized={isRemoteImage(secondaryImageSrc)}
-                className="object-cover"
-                sizes="(min-width: 1024px) 34vw, 70vw"
-              />
+            <div className="absolute top-[40px] h-[240px] w-[55%] overflow-hidden rounded-[16px] border-4 border-white shadow-[0_22px_40px_rgba(0,25,45,0.22)] ltr:right-[2%] rtl:left-[2%] lg:top-[60px] lg:h-[320px] bg-gray-50 z-10">
+              {videoUrl && isPlaying ? (
+                videoUrl.includes("youtube.com") || videoUrl.includes("youtu.be") ? (
+                  <iframe
+                    src={videoUrl.replace("watch?v=", "embed/").replace("youtu.be/", "youtube.com/embed/") + (videoUrl.includes("?") ? "&autoplay=1" : "?autoplay=1")}
+                    className="h-full w-full border-0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <video
+                    src={videoUrl}
+                    controls
+                    className="h-full w-full object-cover"
+                  />
+                )
+              ) : (
+                <div className="group relative h-full w-full">
+                  <Image
+                    src={secondaryImageSrc}
+                    alt={secondaryImageAlt}
+                    fill
+                    unoptimized={isRemoteImage(secondaryImageSrc)}
+                    className="object-cover"
+                    sizes="(min-width: 1024px) 34vw, 70vw"
+                  />
+                  {videoUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setIsPlaying(true)}
+                      className="absolute inset-0 flex items-center justify-center bg-black/10 transition-colors group-hover:bg-black/30"
+                      aria-label="Play video"
+                    >
+                      <Image
+                        src="/play.svg"
+                        alt="Play"
+                        width={96}
+                        height={96}
+                        className="transition-transform group-hover:scale-110"
+                      />
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </StaggerItem>

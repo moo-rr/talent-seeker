@@ -1,5 +1,4 @@
 import Image from "next/image"
-import { MoveUpRight } from "lucide-react"
 import { Link } from "@/i18n/navigation"
 import { PrimaryButton } from "@/components/ui/primary-button"
 import type { Job } from "@/lib/api/types"
@@ -9,7 +8,6 @@ import {
   formatPostedLabel,
   getJobTitle,
 } from "@/features/jobs/lib/job-display"
-import { cn } from "@/lib/utils"
 
 export type JobCardLabels = {
   department: string
@@ -93,9 +91,16 @@ export function JobCard({ job, locale, isRtl, labels }: JobCardProps) {
         asChild
         className="mt-6 h-[44px] w-full rounded-[12px] text-[16px] font-medium"
       >
-        <Link href={`/jobs/${job.id}`}>
+        <Link href={`/jobs/${job.id}`} className="inline-flex items-center justify-center gap-2">
           {labels.moreDetails}
-          <MoveUpRight className={cn("h-6 w-6", isRtl && "rotate-180")} />
+          <Image
+            src="/more.svg"
+            alt=""
+            width={19}
+            height={21}
+            aria-hidden
+            className={isRtl ? "-scale-x-100" : ""}
+          />
         </Link>
       </PrimaryButton>
     </article>

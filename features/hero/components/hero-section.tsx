@@ -78,10 +78,10 @@ export async function HeroSection() {
         className="relative z-10 mt-6 flex flex-col items-center gap-8 px-4 pb-8 sm:mt-10 sm:gap-10 lg:mt-[48px] lg:gap-[48px] lg:px-0 lg:pb-[30px]"
       >
         <StaggerItem>
-          <p className="inline-flex items-center gap-2 rounded-[8px] bg-[rgba(64,160,202,0.15)] px-4 py-2 text-[12px] leading-[1.16] font-normal text-white border border-white/10">
-            <Image src="/home/hero/hero-eyebrow-icon.svg" alt="" width={16} height={16} aria-hidden />
-            {t("eyebrow")}
-          </p>
+          <div className="inline-flex w-fit items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-[13px] font-semibold tracking-[0.06em] text-white/95">
+            <Image src="/footer/icon-link.svg" alt="" width={16} height={16} aria-hidden />
+            <span>{t("eyebrow")}</span>
+          </div>
         </StaggerItem>
 
         <StaggerItem>

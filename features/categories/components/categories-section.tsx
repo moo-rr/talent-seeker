@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { getTranslations, getLocale } from "next-intl/server"
+import { getTranslations } from "next-intl/server"
 import { SectionShell, StaggerInView, StaggerItem } from "@/features/shared-home"
 import { getCategoryKeys } from "@/features/categories/services/categories.service"
 import { CategoryIconFor } from "@/features/categories/components/category-icons"
@@ -12,8 +12,6 @@ const CARD_HOVER_SHADOW =
 
 export async function CategoriesSection() {
   const t = await getTranslations("Landing.categories")
-  const locale = await getLocale()
-  const isRtl = locale === "ar"
   const categories = getCategoryKeys()
 
   return (
@@ -82,7 +80,7 @@ export async function CategoriesSection() {
                     className="h-10 w-full justify-between rounded-xl border-white/40 bg-transparent px-4 text-[16px] font-medium text-white shadow-[0_0_0_4px_#E8F2FF,0_0_0_5px_#FFFFFF,inset_0_1px_18px_2px_#E8F2FF,inset_0_1px_4px_2px_#C2DDFF] hover:bg-white/10 hover:text-white"
                   >
                     {t("showMore")}
-                    <MoveUpRight className={cn("h-5 w-5 shrink-0", isRtl && "rotate-180")} />
+                    <MoveUpRight className="h-5 w-5 shrink-0 rtl:-scale-x-100" />
                   </Button>
                 </CardContent>
               </Card>
