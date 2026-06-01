@@ -14,8 +14,7 @@ export async function GET(request: NextRequest) {
     const locale = request.headers.get("accept-language")?.split(",")[0] || "ar"
     const result = await getNotifications(token, page, locale as "ar" | "en" | "de")
     return NextResponse.json(result)
-  } catch (err) {
-    console.error(err)
+  } catch {
     return NextResponse.json({ data: [], meta: { current_page: 1, last_page: 1, per_page: 10, total: 0 } })
   }
 }

@@ -23,8 +23,6 @@ export async function POST(request: NextRequest) {
       },
       locale
     )
-    console.log("[Register API] User:", JSON.stringify(user, null, 2))
-    console.log("[Register API] Tokens:", tokens?.access_token ? "exists" : "missing")
 
     const session = await getSession()
     session.user = {
@@ -39,7 +37,6 @@ export async function POST(request: NextRequest) {
     session.locale = locale
     session.isLoggedIn = true
     
-    console.log("[Register API] Saving session for user:", session.user.email, "role:", session.user.role)
     await session.save()
 
     return NextResponse.json({ user }, { status: 201 })

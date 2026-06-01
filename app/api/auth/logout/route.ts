@@ -10,16 +10,14 @@ export async function POST() {
     if (token) {
       try {
         await logoutApi(token)
-      } catch (err) {
-        console.warn(err)
-        // continue local logout even if API fails
+      } catch {
+        // Continue local logout even if API fails
       }
     }
 
     session.destroy()
     return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error("[Logout API] Error:", error)
+  } catch {
     return NextResponse.json({ message: "Failed to logout" }, { status: 500 })
   }
 }

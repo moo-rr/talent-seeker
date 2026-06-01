@@ -9,8 +9,7 @@ export async function GET(request: NextRequest) {
   try {
     const list = await getCountries(locale, session?.accessToken)
     return NextResponse.json({ data: list })
-  } catch (err) {
-    console.error(err)
-    return NextResponse.json({ data: [], error: String(err) }, { status: 500 })
+  } catch {
+    return NextResponse.json({ data: [], error: "Failed to fetch countries" }, { status: 500 })
   }
 }

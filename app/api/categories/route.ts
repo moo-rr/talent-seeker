@@ -17,8 +17,7 @@ export async function GET(request: NextRequest) {
       session?.accessToken ?? undefined
     )
     return NextResponse.json({ data: categories })
-  } catch (err) {
-    console.error(err)
+  } catch {
     return NextResponse.json({ data: [] })
   }
 }

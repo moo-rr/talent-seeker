@@ -131,8 +131,8 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
   if (!text) return (null as unknown) as T
   try {
     return JSON.parse(text) as T
-  } catch (err) {
-    console.warn("Failed to parse JSON response, returning raw text", err)
+  } catch {
+    // Silently return raw text if JSON parsing fails
     return (text as unknown) as T
   }
 }
