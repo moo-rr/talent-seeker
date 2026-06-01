@@ -360,7 +360,7 @@ export function DashboardSidebar({
   )
 
   const sidebarPanel = (
-    <aside className="flex h-fit w-full flex-col rounded-[8px] border border-[#E5E7EB] bg-[#F0F4F8] p-0 lg:w-[280px] lg:flex-shrink-0 overflow-hidden">
+    <aside className="flex h-fit w-full flex-col rounded-[8px] border border-[#E5E7EB] bg-[#F0F4F8] p-0 lg:w-[310px]">
       <SidebarNav locale={locale} userRole={userRole} />
     </aside>
   )
@@ -368,7 +368,7 @@ export function DashboardSidebar({
   return (
     <>
       <Sheet open={isOpen} onOpenChange={handleOpenChange}>
-        <SheetContent side={isRTL ? "right" : "left"} className="w-full max-w-[280px] p-0 lg:hidden overflow-y-auto overflow-x-hidden">
+        <SheetContent side={isRTL ? "right" : "left"} className="w-[min(100vw,310px)] p-0 lg:hidden overflow-y-auto">
           <SheetTitle className="sr-only">{isRTL ? "القائمة" : "Menu"}</SheetTitle>
           <div className="bg-[#F0F4F8] pt-8 min-h-dvh flex flex-col">
             <SidebarNav locale={locale} userRole={userRole} onNavigate={() => handleOpenChange(false)} />
