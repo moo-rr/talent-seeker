@@ -801,6 +801,9 @@
         "name": "Name",
         "email": "E-Mail",
         "phone": "Telefon",
+        "country": "Land",
+        "category": "Kategorie",
+        "status": "Status",
         "role": "Rolle",
         "actions": "Aktionen"
       },
@@ -816,16 +819,20 @@
     },
     "companies": {
       "title": "Unternehmen",
-      "description": "Registrierte Unternehmenskonten",
+      "description": "Unternehmenskonten verwalten",
       "columns": {
         "name": "Unternehmen",
         "email": "E-Mail",
         "phone": "Telefon",
-        "verified": "Verifizierung"
+        "employees": "Mitarbeiter",
+        "country": "Land",
+        "status": "Status",
+        "actions": "Aktionen"
       },
-      "verified": "Verifiziert",
-      "notVerified": "Nicht verifiziert",
-      "empty": "Keine Unternehmen"
+      "delete": "Löschen",
+      "deleteConfirm": "Dieses Unternehmen löschen?",
+      "empty": "Keine Unternehmen",
+      "error": "Löschen fehlgeschlagen"
     },
     "successStories": {
       "title": "Erfolgsgeschichten",

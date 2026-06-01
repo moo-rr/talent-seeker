@@ -32,41 +32,47 @@ function LocaleInput({
   onChange,
   multiline = false,
   required = false,
+  onlyLocale,
 }: {
   label: string
   values: Record<LocaleKey, string>
   onChange: (lang: LocaleKey, val: string) => void
   multiline?: boolean
   required?: boolean
+  onlyLocale?: LocaleKey
 }) {
+  // Render only the chosen locale's input (or fallback to 'ar')
   return (
-    <div className="grid gap-4 sm:grid-cols-3">
-      {LOCALES.map((lang) => (
-        <label key={lang} className="block text-sm text-[#374151]">
-          <span className="mb-1.5 flex items-center gap-1.5 font-medium">
-            <span className="rounded bg-[#EAF4FB] px-1.5 py-0.5 text-xs font-bold text-[#006EA8]">
-              {lang.toUpperCase()}
+    <div>
+      {(() => {
+        const lang = onlyLocale ?? ("ar" as LocaleKey)
+        return (
+          <label className="block text-sm text-[#374151]">
+            <span className="mb-1.5 flex items-center gap-1.5 font-medium">
+              <span className="rounded bg-[#EAF4FB] px-1.5 py-0.5 text-xs font-bold text-[#006EA8]">
+                {lang.toUpperCase()}
+              </span>
+              <span>{label}</span>
+              {required && lang === "ar" && <span className="text-red-500">*</span>}
             </span>
-            <span>{label}</span>
-            {required && lang === "ar" && <span className="text-red-500">*</span>}
-          </span>
-          {multiline ? (
-            <textarea
-              rows={4}
-              value={values[lang] || ""}
-              onChange={(e) => onChange(lang, e.target.value)}
-              className="mt-1 w-full rounded-lg border border-[#E5E7EB] bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8] transition-colors"
-            />
-          ) : (
-            <input
-              type="text"
-              value={values[lang] || ""}
-              onChange={(e) => onChange(lang, e.target.value)}
-              className="mt-1 w-full rounded-lg border border-[#E5E7EB] bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8] transition-colors"
-            />
-          )}
-        </label>
-      ))}
+            {multiline ? (
+              <textarea
+                rows={4}
+                value={values[lang] || ""}
+                onChange={(e) => onChange(lang, e.target.value)}
+                className="mt-1 w-full rounded-lg border border-[#E5E7EB] bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8] transition-colors"
+              />
+            ) : (
+              <input
+                type="text"
+                value={values[lang] || ""}
+                onChange={(e) => onChange(lang, e.target.value)}
+                className="mt-1 w-full rounded-lg border border-[#E5E7EB] bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8] transition-colors"
+              />
+            )}
+          </label>
+        )
+      })()}
     </div>
   )
 }
@@ -85,6 +91,8 @@ export function AdminSuccessStoryEditForm({
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+
+  const [editLocale, setEditLocale] = useState<LocaleKey>((locale as LocaleKey) || "ar")
 
   const [form, setForm] = useState<StoryForm>(() => {
     if (!story || isNew) {
@@ -188,7 +196,7 @@ export function AdminSuccessStoryEditForm({
       setSuccess(true)
       router.refresh()
       setTimeout(() => {
-        router.push(`/${locale}/dashboard/admin/success-stories`)
+        router.push(`/dashboard/admin/success-stories`)
       }, 1200)
     })
   }
@@ -218,23 +226,39 @@ export function AdminSuccessStoryEditForm({
             {isRTL ? "بيانات القصة وصاحبها" : "Story & Person Data"}
           </p>
         </div>
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-medium text-[#6B7280]">{isRTL ? "اللغة:" : "Language:"}</label>
+          {LOCALES.map((loc) => (
+            <button
+              key={loc}
+              type="button"
+              onClick={() => setEditLocale(loc)}
+              className={`px-3 py-1.5 text-xs font-semibold rounded ${editLocale === loc ? "bg-[#006EA8] text-white" : "bg-[#EBF5FB] text-[#006EA8]"}`}
+            >
+              {loc.toUpperCase()}
+            </button>
+          ))}
+        </div>
         <LocaleInput
           label={isRTL ? "الاسم" : "Name"}
           values={form.name}
           onChange={(lang, val) => updateField("name", lang, val)}
           required
+          onlyLocale={editLocale}
         />
         <LocaleInput
           label={isRTL ? "الدور / المسمى الوظيفي" : "Role / Position"}
           values={form.role}
           onChange={(lang, val) => updateField("role", lang, val)}
           required
+          onlyLocale={editLocale}
         />
         <LocaleInput
           label={isRTL ? "الموقع (البلد / المدينة)" : "Location"}
           values={form.location}
           onChange={(lang, val) => updateField("location", lang, val)}
           required
+          onlyLocale={editLocale}
         />
         <LocaleInput
           label={isRTL ? "الاقتباس / القصة" : "Quote / Success Story"}
@@ -242,6 +266,7 @@ export function AdminSuccessStoryEditForm({
           onChange={(lang, val) => updateField("quote", lang, val)}
           multiline
           required
+          onlyLocale={editLocale}
         />
       </div>
 

@@ -29,6 +29,7 @@ type FeatureForm = {
   iconPreview?: string | null
 }
 
+
 type ServiceForm = {
   id?: number
   title: Record<LocaleKey, string>
@@ -47,47 +48,84 @@ function emptyFeature(): FeatureForm {
   return { title: emptyLocale(), description: emptyLocale(), icon: "" }
 }
 
+function parseLocalizedField(value: unknown, locale: LocaleKey): Record<LocaleKey, string> {
+  const out = emptyLocale()
+  if (!value) return out
+
+  if (typeof value === "string") {
+    // treat plain string as content for the current locale only
+    out[locale] = value
+    return out
+  }
+
+  if (typeof value === "object") {
+    const obj = value as Record<string, unknown>
+    // try direct ar/en/de keys
+    if (typeof obj.ar === "string" || typeof obj.en === "string" || typeof obj.de === "string") {
+      out.ar = typeof obj.ar === "string" ? obj.ar : ""
+      out.en = typeof obj.en === "string" ? obj.en : ""
+      out.de = typeof obj.de === "string" ? obj.de : ""
+      return out
+    }
+
+    // try keys with suffixes like title_ar, description_en, etc.
+    for (const k of Object.keys(obj)) {
+      const m = k.match(/_?(ar|en|de)$/)
+      if (m) {
+        const l = m[1] as LocaleKey
+        const v = obj[k]
+        if (typeof v === "string") out[l] = v
+      }
+    }
+
+    return out
+  }
+
+  return out
+}
+
 function LocaleInput({
   label,
   values,
   onChange,
   multiline = false,
   required = false,
+  onlyLocale,
 }: {
   label: string
   values: Record<LocaleKey, string>
   onChange: (lang: LocaleKey, val: string) => void
   multiline?: boolean
   required?: boolean
+  onlyLocale?: LocaleKey
 }) {
+  const lang = onlyLocale ?? ("ar" as LocaleKey)
   return (
-    <div className="grid gap-4 sm:grid-cols-3">
-      {LOCALES.map((lang) => (
-        <label key={lang} className="block text-sm text-[#374151]">
-          <span className="mb-1.5 flex items-center gap-1.5 font-medium">
-            <span className="rounded bg-[#EAF4FB] px-1.5 py-0.5 text-xs font-bold text-[#006EA8]">
-              {lang.toUpperCase()}
-            </span>
-            <span>{label}</span>
-            {required && lang === "ar" && <span className="text-red-500">*</span>}
+    <div>
+      <label className="block text-sm text-[#374151]">
+        <span className="mb-1.5 flex items-center gap-1.5 font-medium">
+          <span className="rounded bg-[#EAF4FB] px-1.5 py-0.5 text-xs font-bold text-[#006EA8]">
+            {lang.toUpperCase()}
           </span>
-          {multiline ? (
-            <textarea
-              rows={3}
-              value={values[lang] || ""}
-              onChange={(e) => onChange(lang, e.target.value)}
-              className="mt-1 w-full rounded-lg border border-[#E5E7EB] bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8] transition-colors"
-            />
-          ) : (
-            <input
-              type="text"
-              value={values[lang] || ""}
-              onChange={(e) => onChange(lang, e.target.value)}
-              className="mt-1 w-full rounded-lg border border-[#E5E7EB] bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8] transition-colors"
-            />
-          )}
-        </label>
-      ))}
+          <span>{label}</span>
+          {required && lang === "ar" && <span className="text-red-500">*</span>}
+        </span>
+        {multiline ? (
+          <textarea
+            rows={3}
+            value={values[lang] || ""}
+            onChange={(e) => onChange(lang, e.target.value)}
+            className="mt-1 w-full rounded-lg border border-[#E5E7EB] bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8] transition-colors"
+          />
+        ) : (
+          <input
+            type="text"
+            value={values[lang] || ""}
+            onChange={(e) => onChange(lang, e.target.value)}
+            className="mt-1 w-full rounded-lg border border-[#E5E7EB] bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8] transition-colors"
+          />
+        )}
+      </label>
     </div>
   )
 }
@@ -107,6 +145,8 @@ export function AdminServiceEditForm({
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
+  const [editLocale, setEditLocale] = useState<LocaleKey>((locale as LocaleKey) || "ar")
+
   const [form, setForm] = useState<ServiceForm>(() => {
     if (!service || isNew) {
       return {
@@ -115,17 +155,96 @@ export function AdminServiceEditForm({
         features: [emptyFeature()],
       }
     }
+
+    const allLocales = (service as any).__allLocales as Record<string, any> | undefined
+    if (allLocales) {
+      const title = emptyLocale()
+      const description = emptyLocale()
+
+      for (const loc of LOCALES) {
+        const item = allLocales[loc] ?? {}
+        const parsedTitle = parseLocalizedField(item.title ?? item.title_raw ?? item, loc as LocaleKey)
+        const parsedDesc = parseLocalizedField(item.description ?? item.content ?? item, loc as LocaleKey)
+        title[loc] = parsedTitle[loc] || ""
+        description[loc] = parsedDesc[loc] || ""
+      }
+
+      const features: FeatureForm[] = []
+      const featuresByLocale: Record<string, any[]> = {}
+      for (const loc of LOCALES) {
+        featuresByLocale[loc] = Array.isArray(allLocales[loc]?.features) ? allLocales[loc].features : []
+      }
+
+      const idSet = new Set<number>()
+      for (const loc of LOCALES) {
+        for (const f of featuresByLocale[loc]) {
+          if (f && typeof f.id === "number") idSet.add(f.id)
+        }
+      }
+
+      if (idSet.size > 0) {
+        for (const idVal of Array.from(idSet)) {
+          const fTitle = emptyLocale()
+          const fDesc = emptyLocale()
+          let icon = ""
+          for (const loc of LOCALES) {
+            const f = featuresByLocale[loc].find((ff) => ff && ff.id === idVal)
+            const parsedTitle = parseLocalizedField(f?.title ?? f?.title_raw ?? f, loc as LocaleKey)
+            fTitle[loc] = parsedTitle[loc] || ""
+            const parsedDesc = parseLocalizedField(f?.description ?? f?.content ?? f, loc as LocaleKey)
+            fDesc[loc] = parsedDesc[loc] || ""
+            if (!icon && f?.icon) icon = f.icon
+          }
+          features.push({ id: idVal, title: fTitle, description: fDesc, icon })
+        }
+      } else {
+        const maxLen = Math.max(...LOCALES.map((l) => featuresByLocale[l].length))
+        for (let i = 0; i < maxLen; i++) {
+          const fTitle = emptyLocale()
+          const fDesc = emptyLocale()
+          let icon = ""
+          for (const loc of LOCALES) {
+            const f = featuresByLocale[loc][i]
+            const parsedTitle = parseLocalizedField(f?.title ?? f?.title_raw ?? f, loc as LocaleKey)
+            fTitle[loc] = parsedTitle[loc] || ""
+            const parsedDesc = parseLocalizedField(f?.description ?? f?.content ?? f, loc as LocaleKey)
+            fDesc[loc] = parsedDesc[loc] || ""
+            if (!icon && f?.icon) icon = f.icon
+          }
+          features.push({ title: fTitle, description: fDesc, icon })
+        }
+      }
+
+      const existingImage = (allLocales[locale as LocaleKey]?.image) ?? allLocales.ar?.image ?? allLocales.en?.image ?? allLocales.de?.image ?? ""
+
+      return {
+        id: service.id,
+        title,
+        description,
+        existingImage,
+        features,
+      }
+    }
+
+    // Fallback: single-locale shaped service
+    const title = parseLocalizedField(service.title ?? service.title_raw ?? service, locale as LocaleKey)
+    const description = parseLocalizedField(service.description ?? service.content ?? service, locale as LocaleKey)
+
+    const features = Array.isArray(service.features)
+      ? service.features.map((f: any) => ({
+          id: f.id,
+          title: parseLocalizedField(f.title ?? f.title_raw ?? f, locale as LocaleKey),
+          description: parseLocalizedField(f.description ?? f.content ?? f, locale as LocaleKey),
+          icon: f.icon ?? "",
+        }))
+      : []
+
     return {
       id: service.id,
-      title: { ar: service.title ?? "", en: service.title ?? "", de: service.title ?? "" },
-      description: { ar: service.description ?? "", en: service.description ?? "", de: service.description ?? "" },
+      title,
+      description,
       existingImage: service.image ?? "",
-      features: (service.features ?? []).map((f: any) => ({
-        id: f.id,
-        title: { ar: f.title ?? "", en: f.title ?? "", de: f.title ?? "" },
-        description: { ar: f.description ?? "", en: f.description ?? "", de: f.description ?? "" },
-        icon: f.icon ?? "",
-      })),
+      features,
     }
   })
 
@@ -180,8 +299,8 @@ export function AdminServiceEditForm({
         if (t) formData.append(`features[${fi}][title][${lang}]`, t)
         if (d) formData.append(`features[${fi}][description][${lang}]`, d)
       }
-      if (feat.icon?.trim()) formData.append(`features[${fi}][icon]`, feat.icon.trim())
-      if (feat.iconFile) formData.append(`features[${fi}][icon_file]`, feat.iconFile)
+      // Only send an uploaded file for icon under the expected key; avoid sending plain strings for validation
+      if (feat.iconFile) formData.append(`features[${fi}][icon]`, feat.iconFile)
     })
 
     startTransition(async () => {
@@ -194,7 +313,7 @@ export function AdminServiceEditForm({
       router.refresh()
       // Navigate back to services list after a short delay
       setTimeout(() => {
-        router.push(`/${locale}/dashboard/admin/services`)
+        router.push(`/dashboard/admin/services`)
       }, 1200)
     })
   }
@@ -225,11 +344,26 @@ export function AdminServiceEditForm({
             {isRTL ? "بيانات الخدمة الأساسية" : "Core Service Data"}
           </p>
         </div>
+        <div className="flex items-center gap-2 mb-3">
+          <label className="text-xs font-medium text-[#6B7280]">{isRTL ? "اللغة:" : "Language:"}</label>
+          {LOCALES.map((loc) => (
+            <button
+              key={loc}
+              type="button"
+              onClick={() => setEditLocale(loc)}
+              className={`px-3 py-1.5 text-xs font-semibold rounded ${editLocale === loc ? "bg-[#006EA8] text-white" : "bg-[#EBF5FB] text-[#006EA8]"}`}
+            >
+              {loc.toUpperCase()}
+            </button>
+          ))}
+        </div>
+
         <LocaleInput
           label={isRTL ? "عنوان الخدمة" : "Service Title"}
           values={form.title}
           onChange={updateTitle}
           required
+          onlyLocale={editLocale}
         />
         <LocaleInput
           label={isRTL ? "وصف الخدمة" : "Service Description"}
@@ -237,6 +371,7 @@ export function AdminServiceEditForm({
           onChange={updateDesc}
           multiline
           required
+          onlyLocale={editLocale}
         />
       </div>
 
@@ -332,6 +467,7 @@ export function AdminServiceEditForm({
                 </span>
                 <button
                   type="button"
+                  title={isRTL ? "حذف الميزة" : "Remove feature"}
                   onClick={() => removeFeature(fi)}
                   className="flex h-7 w-7 items-center justify-center rounded-full bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
                 >
@@ -345,6 +481,7 @@ export function AdminServiceEditForm({
                 onChange={(lang, val) =>
                   updateFeature(fi, { ...feat, title: { ...feat.title, [lang]: val } })
                 }
+                onlyLocale={editLocale}
               />
               <LocaleInput
                 label={isRTL ? "وصف الميزة" : "Feature Description"}
@@ -353,6 +490,7 @@ export function AdminServiceEditForm({
                   updateFeature(fi, { ...feat, description: { ...feat.description, [lang]: val } })
                 }
                 multiline
+                onlyLocale={editLocale}
               />
 
               {/* Icon */}

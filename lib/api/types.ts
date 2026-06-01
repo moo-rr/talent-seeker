@@ -13,20 +13,65 @@ export interface PaginationMeta {
   total: number
 }
 
+export interface UserProfile {
+  firstName?: string | null
+  lastName?: string | null
+  gender?: string | null
+  dateOfBirth?: string | null
+  facebook?: string | null
+  linkedin?: string | null
+  twitterX?: string | null
+  pinterest?: string | null
+  categoryId?: number | null
+  subcategoryId?: number | null
+}
+
+export interface CompanyProfileData {
+  companyName?: string | null
+  ceoName?: string | null
+  description?: string | null
+  website?: string | null
+  postalCode?: string | null
+  address?: string | null
+  numOfEmployees?: number | null
+  logoUrl?: string | null
+  coverImageUrl?: string | null
+  socialMedia?: {
+    facebook?: string | null
+    linkedin?: string | null
+    twitterX?: string | null
+    pinterest?: string | null
+  }
+}
+
 export interface User {
   id: number
+  uuid?: string
   name: string
   email: string
   phone?: string
   avatar?: string
-  role: "user" | "company" | "admin"
-  email_verified_at?: string
-  preferences?: UserPreferences
+  status?: "active" | "pending" | "inactive"
+  emailVerified?: boolean
+  lastLoginAt?: string | null
+  locale?: "ar" | "en" | "de"
+  timezone?: string
+  preferences?: UserPreferences | null
+  acceptTermsAndPrivacy?: boolean
+  companyProfile?: CompanyProfileData | null
+  Userprofile?: UserProfile | null
+  country?: Country
+  city?: City | null
+  roles?: string[]
+  createdAt?: string
+  updatedAt?: string
+  /** Legacy field - use roles instead */
+  role?: "user" | "company" | "admin"
 }
 
 export interface UserPreferences {
-  language: "ar" | "en" | "de"
-  notifications: boolean
+  language?: "ar" | "en" | "de"
+  notifications?: boolean
 }
 
 export interface AuthTokens {

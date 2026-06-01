@@ -14,7 +14,7 @@ export class ApiError extends Error {
   }
 }
 
-type FetchOptions = RequestInit & { locale?: string; token?: string }
+type FetchOptions = RequestInit & { locale?: string; token?: string; timeout?: number }
 
 function ensureBrowserSafeRequest(endpoint: string) {
   if (!isBrowser) {
@@ -113,11 +113,39 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
     (nextOption ? undefined : "no-store")
 
   // Debug logging removed to reduce console noise
-  const res = await fetch(requestUrl, {
-    ...fetchOptions,
-    headers,
-    cache: cacheOption,
-  })
+  // Add an AbortController-based timeout to avoid hanging requests
+  const controller = new AbortController()
+  const timeoutMs = (fetchOptions as any).timeout ?? 8000
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+
+  const start = Date.now()
+
+  let res: Response
+  try {
+    res = await fetch(requestUrl, {
+      ...fetchOptions,
+      headers,
+      cache: cacheOption,
+      signal: controller.signal,
+    })
+  } catch (err: any) {
+    clearTimeout(timeoutId)
+    const duration = Date.now() - start
+    if (!isBrowser && duration > 2000) {
+      console.warn(`[fetchApi] slow failure ${requestUrl} ${duration}ms`)
+    }
+    if (err && err.name === "AbortError") {
+      throw new ApiError(0, `Request timed out after ${timeoutMs}ms`)
+    }
+    // Network or other unexpected error
+    throw new ApiError(0, err?.message || "Network error")
+  }
+  clearTimeout(timeoutId)
+
+  const duration = Date.now() - start
+  if (!isBrowser && duration > 2000) {
+    console.warn(`[fetchApi] slow request ${requestUrl} ${duration}ms`)
+  }
 
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}))

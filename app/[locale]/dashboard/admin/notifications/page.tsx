@@ -20,7 +20,13 @@ export default async function AdminNotificationsPage({
 
   const token = session.accessToken
 
-  const notificationsResult = await getNotifications(token, 1, locale).catch(() => ({ data: [] }))
+  let notificationsResult = { data: [] }
+  try {
+    notificationsResult = await getNotifications(token, 1, locale)
+  } catch (err) {
+    console.error("[AdminNotificationsPage] getNotifications error:", err)
+    notificationsResult = { data: [] }
+  }
 
   return (
     <AdminPageLayout

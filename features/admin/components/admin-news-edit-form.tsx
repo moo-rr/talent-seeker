@@ -24,47 +24,91 @@ function emptyLocale(): Record<LocaleKey, string> {
   return { ar: "", en: "", de: "" }
 }
 
+function parseLocalizedField(value: unknown, locale: LocaleKey): Record<LocaleKey, string> {
+  const out = emptyLocale()
+  if (!value) return out
+
+  if (typeof value === "string") {
+    out[locale] = value
+    return out
+  }
+
+  if (typeof value === "object") {
+    const obj = value as Record<string, unknown>
+    if (typeof obj.ar === "string" || typeof obj.en === "string" || typeof obj.de === "string") {
+      out.ar = typeof obj.ar === "string" ? obj.ar : ""
+      out.en = typeof obj.en === "string" ? obj.en : ""
+      out.de = typeof obj.de === "string" ? obj.de : ""
+      return out
+    }
+
+    for (const k of Object.keys(obj)) {
+      const m = k.match(/_?(ar|en|de)$/)
+      if (m) {
+        const l = m[1] as LocaleKey
+        const v = obj[k]
+        if (typeof v === "string") out[l] = v
+      }
+    }
+
+    for (const l of LOCALES) {
+      const v = (obj as Record<string, unknown>)[l]
+      if (typeof v === "string") out[l] = v
+    }
+
+    return out
+  }
+
+  return out
+}
+
 function LocaleInput({
   label,
   values,
   onChange,
   multiline = false,
   required = false,
+  onlyLocale,
 }: {
   label: string
   values: Record<LocaleKey, string>
   onChange: (lang: LocaleKey, val: string) => void
   multiline?: boolean
   required?: boolean
+  onlyLocale?: LocaleKey
 }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-3">
-      {LOCALES.map((lang) => (
-        <label key={lang} className="block text-sm text-[#374151]">
-          <span className="mb-1.5 flex items-center gap-1.5 font-medium">
-            <span className="rounded bg-[#EAF4FB] px-1.5 py-0.5 text-xs font-bold text-[#006EA8]">
-              {lang.toUpperCase()}
+    <div>
+      {/* Render only the chosen locale's input (or fallback to 'ar') */}
+      {(() => {
+        const lang = onlyLocale ?? ("ar" as LocaleKey)
+        return (
+          <label className="block text-sm text-[#374151]">
+            <span className="mb-1.5 flex items-center gap-1.5 font-medium">
+              <span className="rounded bg-[#EAF4FB] px-1.5 py-0.5 text-xs font-bold text-[#006EA8]">
+                {lang.toUpperCase()}
+              </span>
+              <span>{label}</span>
+              {required && lang === "ar" && <span className="text-red-500">*</span>}
             </span>
-            <span>{label}</span>
-            {required && lang === "ar" && <span className="text-red-500">*</span>}
-          </span>
-          {multiline ? (
-            <textarea
-              rows={5}
-              value={values[lang] || ""}
-              onChange={(e) => onChange(lang, e.target.value)}
-              className="mt-1 w-full rounded-lg border border-[#E5E7EB] bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8] transition-colors"
-            />
-          ) : (
-            <input
-              type="text"
-              value={values[lang] || ""}
-              onChange={(e) => onChange(lang, e.target.value)}
-              className="mt-1 w-full rounded-lg border border-[#E5E7EB] bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8] transition-colors"
-            />
-          )}
-        </label>
-      ))}
+            {multiline ? (
+              <textarea
+                rows={5}
+                value={values[lang] || ""}
+                onChange={(e) => onChange(lang, e.target.value)}
+                className="mt-1 w-full rounded-lg border border-[#E5E7EB] bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8] transition-colors"
+              />
+            ) : (
+              <input
+                type="text"
+                value={values[lang] || ""}
+                onChange={(e) => onChange(lang, e.target.value)}
+                className="mt-1 w-full rounded-lg border border-[#E5E7EB] bg-white px-3 py-2 text-sm text-gray-900 focus:border-[#006EA8] focus:outline-none focus:ring-1 focus:ring-[#006EA8] transition-colors"
+              />
+            )}
+          </label>
+        )
+      })()}
     </div>
   )
 }
@@ -84,6 +128,8 @@ export function AdminNewsEditForm({
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
+  const [editLocale, setEditLocale] = useState<LocaleKey>((locale as LocaleKey) || "ar")
+
   const [form, setForm] = useState<NewsForm>(() => {
     if (!newsItem || isNew) {
       return {
@@ -91,18 +137,56 @@ export function AdminNewsEditForm({
         description: emptyLocale(),
       }
     }
+
+    const allLocales = (newsItem as any).__allLocales as Record<string, any> | undefined
+    if (allLocales) {
+      const t = emptyLocale()
+      const d = emptyLocale()
+
+      for (const loc of LOCALES) {
+        const item = allLocales[loc] ?? {}
+        const parsedTitle = parseLocalizedField(item.title ?? item.title_raw ?? item, loc as LocaleKey)
+        const parsedDesc = parseLocalizedField(item.description ?? item.content ?? item, loc as LocaleKey)
+        t[loc] = parsedTitle[loc] || ""
+        d[loc] = parsedDesc[loc] || ""
+      }
+
+      const existingImage = allLocales[locale as LocaleKey]?.image ?? allLocales.ar?.image ?? allLocales.en?.image ?? allLocales.de?.image ?? ""
+
+      return {
+        id: newsItem.id,
+        title: t,
+        description: d,
+        existingImage,
+      }
+    }
+
+    const t = emptyLocale()
+    const d = emptyLocale()
+
+    // Prefer explicit localized fields when available
+    if (typeof newsItem.title_ar === "string") t.ar = newsItem.title_ar
+    if (typeof newsItem.title_en === "string") t.en = newsItem.title_en
+    if (typeof newsItem.title_de === "string") t.de = newsItem.title_de
+
+    // If no explicit localized titles but a plain `title` exists, set it only for current locale
+    if (!t.ar && !t.en && !t.de && typeof newsItem.title === "string") {
+      ;(t as any)[locale as LocaleKey] = newsItem.title
+    }
+
+    // Descriptions / content
+    const fallbackDesc = newsItem.content ?? newsItem.excerpt ?? newsItem.description
+    if (typeof newsItem.description_ar === "string") d.ar = newsItem.description_ar
+    if (typeof newsItem.description_en === "string") d.en = newsItem.description_en
+    if (typeof newsItem.description_de === "string") d.de = newsItem.description_de
+    if (!d.ar && !d.en && !d.de && typeof fallbackDesc === "string") {
+      ;(d as any)[locale as LocaleKey] = fallbackDesc
+    }
+
     return {
       id: newsItem.id,
-      title: { 
-        ar: newsItem.title_ar ?? newsItem.title ?? "", 
-        en: newsItem.title_en ?? newsItem.title ?? "", 
-        de: newsItem.title_de ?? newsItem.title ?? "" 
-      },
-      description: { 
-        ar: newsItem.description_ar ?? newsItem.content ?? newsItem.excerpt ?? "", 
-        en: newsItem.description_en ?? newsItem.content ?? newsItem.excerpt ?? "", 
-        de: newsItem.description_de ?? newsItem.content ?? newsItem.excerpt ?? "" 
-      },
+      title: t,
+      description: d,
       existingImage: newsItem.image ?? "",
     }
   })
@@ -159,7 +243,7 @@ export function AdminNewsEditForm({
       setSuccess(true)
       router.refresh()
       setTimeout(() => {
-        router.push(`/${locale}/dashboard/admin/news`)
+        router.push(`/dashboard/admin/news`)
       }, 1200)
     })
   }
@@ -189,16 +273,31 @@ export function AdminNewsEditForm({
             {isRTL ? "محتوى الخبر" : "News Content"}
           </p>
         </div>
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-medium text-[#6B7280]">{isRTL ? "اللغة:" : "Language:"}</label>
+          {LOCALES.map((loc) => (
+            <button
+              key={loc}
+              type="button"
+              onClick={() => setEditLocale(loc)}
+              className={`px-3 py-1.5 text-xs font-semibold rounded ${editLocale === loc ? "bg-[#006EA8] text-white" : "bg-[#EBF5FB] text-[#006EA8]"}`}
+            >
+              {loc.toUpperCase()}
+            </button>
+          ))}
+        </div>
         <LocaleInput
           label={isRTL ? "عنوان الخبر" : "News Title"}
           values={form.title}
           onChange={updateTitle}
+          onlyLocale={editLocale}
           required
         />
         <LocaleInput
           label={isRTL ? "وصف/تفاصيل الخبر" : "News Description/Content"}
           values={form.description}
           onChange={updateDesc}
+          onlyLocale={editLocale}
           multiline
           required
         />

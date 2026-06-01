@@ -17,7 +17,6 @@ export default function ApplyButton({ jobId, locale = "ar", label = "Apply" }: A
 
   const handleApply = async () => {
     if (loading || applied) return
-    setApplied(true) // optimistic
     setLoading(true)
     const id = toast.loading("Processing...")
     try {
@@ -34,13 +33,24 @@ export default function ApplyButton({ jobId, locale = "ar", label = "Apply" }: A
       }
 
       const data = await res.json().catch(() => null)
-      if (res.ok && data && data.ok) {
+
+      // Successful apply
+      if (res.ok && data && (data.ok || data.applied || data.already === true)) {
+        setApplied(true)
         toast.dismiss(id)
-        toast.success("Applied")
-        // No full refresh: optimistic update already applied
-      } else {
-        throw new Error((data && data.message) || "Failed to apply")
+        toast.success(data?.message || "Applied")
+        return
       }
+
+      // Backend may return 409 or a message indicating the user already applied
+      if (res.status === 409 || (data && typeof data.message === "string" && /already/i.test(data.message))) {
+        setApplied(true)
+        toast.dismiss(id)
+        toast(() => data?.message || "Already applied")
+        return
+      }
+
+      throw new Error((data && data.message) || "Failed to apply")
     } catch (err: any) {
       setApplied(false)
       toast.dismiss(id)

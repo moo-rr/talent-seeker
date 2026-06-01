@@ -21,7 +21,7 @@ export default async function AdminUsersPage({
 
   let users: Awaited<ReturnType<typeof getAdminUsers>>["data"] = []
   try {
-    const result = await getAdminUsers(session.accessToken!, undefined, 1, locale)
+    const result = await getAdminUsers(session.accessToken!, "user", 1, locale)
     users = result.data
   } catch (err) {
     console.error(err)

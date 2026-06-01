@@ -281,20 +281,20 @@ export function AdminContactMessagesPanel({
         <StatCard
           title={isRTL ? "إجمالي الرسائل" : "Total Messages"}
           value={stats.total}
-          icon={<Mail className="h-6 w-6 text-white/80" />}
-          bgGradient="bg-gradient-to-br from-[#006EA8] to-[#005685]"
+          icon={<Mail className="h-6 w-6 text-white" />}
+          bgGradient="bg-gradient-to-br from-[#006EA8]/50 to-[#005685]/80"
         />
         <StatCard
           title={isRTL ? "رسائل جديدة" : "New Messages"}
           value={stats.new}
-          icon={<MessageCircle className="h-6 w-6 text-white/80" />}
-          bgGradient="bg-gradient-to-br from-[#41A0CA] to-[#2AA7B9]"
+          icon={<MessageCircle className="h-6 w-6 text-white" />}
+          bgGradient="bg-gradient-to-br from-[#41A0CA]/50 to-[#2AA7B9]/80"
         />
         <StatCard
           title={isRTL ? "تم الرد" : "Replied"}
           value={repliedCount}
           icon={<FontAwesomeIcon icon={faWhatsapp} style={{ width: 24, height: 24, color: 'rgba(255,255,255,0.8)' }} />}
-          bgGradient="bg-gradient-to-br from-[#25D366] to-[#1BA855]"
+          bgGradient="bg-gradient-to-br from-[#25D366]/90 to-[#1BA855]/80"
         />
       </div>
 
@@ -335,15 +335,7 @@ export function AdminContactMessagesPanel({
         </div>
       )}
 
-      {/* WhatsApp Floating Button */}
-      <a
-        href={`/${locale}/contact`}
-        aria-label={isRTL ? "رسالة جديدة" : "New message"}
-        className="fixed bottom-6 right-6 z-40 flex items-center justify-center h-14 w-14 rounded-full bg-gradient-to-br from-[#25D366] to-[#1BA855] text-white shadow-lg hover:scale-110 transition-transform"
-        title={isRTL ? "رسالة جديدة عبر واتساب" : "New WhatsApp message"}
-      >
-        <FontAwesomeIcon icon={faWhatsapp} style={{ width: 24, height: 24 }} />
-      </a>
+   
     </div>
   )
 }

@@ -160,6 +160,22 @@ export async function getCategories(
   return []
 }
 
+// Get raw categories with all fields preserved (for admin editors)
+export async function getCategoriesRaw(locale?: string, token?: string): Promise<any[]> {
+  try {
+    const response = await api.get<unknown>("/categories", { locale, token })
+    if (!response || typeof response !== "object") return []
+
+    const root = response as Record<string, unknown>
+    const list = Array.isArray(root.data) ? root.data : Array.isArray(response) ? response : []
+
+    return list
+  } catch (err) {
+    console.error("[getCategoriesRaw] error:", err)
+    return []
+  }
+}
+
 /** Categories for forms: API first, then home payload, with optional auth. */
 export async function getCategoriesForForm(
   locale = "ar",
@@ -195,7 +211,9 @@ export async function updateCategoryAdmin(
   token: string,
   locale = "ar"
 ): Promise<void> {
-  await api.post<unknown>(`/categories/${id}?_method=PUT`, formData, { token, locale })
+  // Backend accepts POST /categories with `id` in FormData for updates
+  if (!formData.has("id")) formData.append("id", String(id))
+  await api.post<unknown>(`/categories`, formData, { token, locale })
 }
 
 /** Admin: delete a category */

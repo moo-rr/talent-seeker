@@ -2,7 +2,7 @@ import { redirect } from "next/navigation"
 import { getTranslations, setRequestLocale } from "next-intl/server"
 import { getSession } from "@/lib/session"
 import { ApiError } from "@/lib/api/client"
-import { getAdminJobs, getAdminUsers } from "@/lib/api/services/admin.service"
+import { getAdminJobs, getAdminUsers, getAdminStats } from "@/lib/api/services/admin.service"
 import { AdminDashboardOverview } from "@/features/admin/components/admin-dashboard-overview"
 import { AdminPageLayout } from "@/features/admin/components/admin-page-layout"
 
@@ -37,27 +37,16 @@ export default async function AdminDashboardPage({
   let pendingJobs: Awaited<ReturnType<typeof getAdminJobs>>["data"] = []
 
   async function fetchAll(tkn: string) {
-    const [usersRes, companiesRes, pendingRes, approvedRes, activeRes] =
-      await Promise.all([
-        getAdminUsers(tkn, undefined, 1, locale).catch(() => ({ data: [], meta: { ...EMPTY_META } })),
-        getAdminUsers(tkn, "company", 1, locale).catch(() => ({ data: [], meta: { ...EMPTY_META } })),
-        getAdminJobs(tkn, "pending", 1, locale).catch(() => ({ data: [], meta: { ...EMPTY_META } })),
-        getAdminJobs(tkn, "approved", 1, locale).catch(() => ({ data: [], meta: { ...EMPTY_META } })),
-        getAdminJobs(tkn, "active", 1, locale).catch(() => ({ data: [], meta: { ...EMPTY_META } })),
-      ])
-
-    const totalUsers = usersRes.meta?.total ?? 0
-    const totalCompanies = companiesRes.meta?.total ?? 0
-    const totalPending = pendingRes.meta?.total ?? 0
-    const totalApproved = approvedRes.meta?.total ?? 0
-    const totalActive = activeRes.meta?.total ?? 0
+    // Use dedicated stats endpoint (with robust fallbacks) to get accurate totals.
+    const statsRes = await getAdminStats(tkn, locale).catch(() => ({ total_users: 0, total_companies: 0, total_jobs: 0, pending_jobs: 0 }))
+    const pendingRes = await getAdminJobs(tkn, "pending", 1, locale).catch(() => ({ data: [], meta: { ...EMPTY_META } }))
 
     stats = {
-      total_users: totalUsers,
-      total_companies: totalCompanies,
-      total_jobs: totalApproved + totalActive + totalPending,
-      pending_jobs: totalPending,
-      published_jobs: totalApproved + totalActive,
+      total_users: statsRes.total_users ?? 0,
+      total_companies: statsRes.total_companies ?? 0,
+      total_jobs: statsRes.total_jobs ?? 0,
+      pending_jobs: statsRes.pending_jobs ?? (pendingRes.meta?.total ?? 0),
+      published_jobs: (statsRes.total_jobs ?? 0) - (statsRes.pending_jobs ?? 0),
     }
     pendingJobs = pendingRes.data
   }

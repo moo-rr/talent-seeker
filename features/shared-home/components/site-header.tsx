@@ -319,55 +319,7 @@ export function SiteHeader({
         )}
 
         <div className="flex shrink-0 items-center gap-2 sm:gap-3 lg:gap-4">
-          {isDashboard && (
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="h-10 w-10 shrink-0 rounded-[12px] border-white/20 bg-white/5 text-white hover:bg-white/10 lg:hidden shadow-sm"
-              aria-label={isRTL ? "فتح القائمة" : "Open menu"}
-              onClick={() => {
-                onMobileMenuClick?.()
-                mobileMenu.open()
-              }}
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-          )}
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className="h-10 gap-1.5 rounded-[12px] border border-[#40A0CA]/50 bg-transparent px-2.5 text-white hover:bg-white/10 sm:h-[44px] sm:gap-2 sm:px-3"
-              >
-                <span className="text-base sm:text-lg">{currentLocaleOption.flag}</span>
-                <ChevronDown className="hidden h-4 w-4 text-white/90 sm:block" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align={isRTL ? "start" : "end"}
-              sideOffset={8}
-              className={cn(
-                "z-[200] w-[min(calc(100vw-2rem),190px)] rounded-[12px] border border-[#cfe7f7] bg-white p-1 shadow-lg",
-                isRTL && "text-end"
-              )}
-            >
-              {LOCALE_OPTIONS.map((option) => (
-                <DropdownMenuItem key={option.locale} asChild className="rounded-[8px] px-2 py-2 text-[#032C44]">
-                  <Link locale={option.locale} href={pathname} className="flex w-full items-center justify-between gap-3">
-                    <span className="flex items-center gap-2">
-                      <span className="text-lg">{option.flag}</span>
-                      <span className="truncate">{option.label}</span>
-                    </span>
-                    {option.locale === currentLocale && <Check className="h-4 w-4 shrink-0 text-[#006EA8]" />}
-                  </Link>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {isLoggedIn && (
+         {isLoggedIn && (
             <div className="relative" ref={notificationsRef}>
               <Button
                 ref={buttonRef}
@@ -450,6 +402,58 @@ export function SiteHeader({
               )}
             </div>
           )}
+
+          
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                className="h-10 gap-1.5 rounded-[12px] border border-[#40A0CA]/50 bg-transparent px-2.5 text-white hover:bg-white/10 sm:h-[44px] sm:gap-2 sm:px-3"
+              >
+                <span className="text-base sm:text-lg">{currentLocaleOption.flag}</span>
+                <ChevronDown className="hidden h-4 w-4 text-white/90 sm:block" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align={isRTL ? "start" : "end"}
+              sideOffset={8}
+              className={cn(
+                "z-[200] w-[min(calc(100vw-2rem),190px)] rounded-[12px] border border-[#cfe7f7] bg-white p-1 shadow-lg",
+                isRTL && "text-end"
+              )}
+            >
+              {LOCALE_OPTIONS.map((option) => (
+                <DropdownMenuItem key={option.locale} asChild className="rounded-[8px] px-2 py-2 text-[#032C44]">
+                  <Link locale={option.locale} href={pathname} className="flex w-full items-center justify-between gap-3">
+                    <span className="flex items-center gap-2">
+                      <span className="text-lg">{option.flag}</span>
+                      <span className="truncate">{option.label}</span>
+                    </span>
+                    {option.locale === currentLocale && <Check className="h-4 w-4 shrink-0 text-[#006EA8]" />}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+
+          {isDashboard && (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-10 w-10 shrink-0 rounded-[12px] border-white/20 bg-white/5 text-white hover:bg-white/10 lg:hidden shadow-sm"
+              aria-label={isRTL ? "فتح القائمة" : "Open menu"}
+              onClick={() => {
+                onMobileMenuClick?.()
+                mobileMenu.open()
+              }}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          )}
+          
 
           {isLoggedIn ? (
             <Link locale={currentLocale} href="/dashboard" className="hidden sm:block shrink-0">

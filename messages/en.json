@@ -801,6 +801,9 @@
         "name": "Name",
         "email": "Email",
         "phone": "Phone",
+        "country": "Country",
+        "category": "Category",
+        "status": "Status",
         "role": "Role",
         "actions": "Actions"
       },
@@ -816,16 +819,20 @@
     },
     "companies": {
       "title": "Companies",
-      "description": "Registered company accounts",
+      "description": "Manage company accounts",
       "columns": {
         "name": "Company",
         "email": "Email",
         "phone": "Phone",
-        "verified": "Verification"
+        "employees": "Employees",
+        "country": "Country",
+        "status": "Status",
+        "actions": "Actions"
       },
-      "verified": "Verified",
-      "notVerified": "Not verified",
-      "empty": "No companies"
+      "delete": "Delete",
+      "deleteConfirm": "Delete this company?",
+      "empty": "No companies",
+      "error": "Delete failed"
     },
     "successStories": {
       "title": "Success stories",

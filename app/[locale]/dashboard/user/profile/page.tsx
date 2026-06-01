@@ -1,347 +1,67 @@
-// app/[locale]/dashboard/user/profile/page.tsx
-"use client"
+// server wrapper to provide locale + session to the client component
+import { redirect } from "next/navigation"
+import { setRequestLocale } from "next-intl/server"
+import { getSession } from "@/lib/session"
+import UserProfileClient from "./client"
+import { getProfile } from "@/lib/api/services/auth.service"
 
-import { useEffect, useState } from "react"
-import { useAuth } from "@/hooks/use-auth"
-import Image from "next/image"
-import { Input } from "@/components/ui/input"
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
+export default async function UserProfilePage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params
+  setRequestLocale(locale)
+  const session = await getSession()
 
-export default function UserProfilePage() {
-  const { loading } = useAuth()
+  if (!session.isLoggedIn || !session.accessToken) {
+    redirect(`/${locale}/sign-in`)
+  }
 
-  const [profile, setProfile] = useState<Record<string, any>>({
-    first_name: "",
-    last_name: "",
-    email: "",
-    phone: "",
-    gender: "",
-    dob: "",
-    country: "",
-    category: "",
-    sub_category: "",
-    avatar: "",
-  })
+  // prefetch profile server-side so client has initial data and locale
+  let initialProfile: Record<string, any> | undefined = undefined
+  try {
+    const user = await getProfile(session.accessToken!, locale)
+    if (user) {
+      // Handle nested Userprofile object with camelCase fields from API
+      const userProfile = (user as any).Userprofile || {}
+      
+      // Extract name - use firstName/lastName from Userprofile if available, else split full name
+      let firstName = userProfile.firstName || ""
+      let lastName = userProfile.lastName || ""
+      if (!firstName && !lastName && user.name) {
+        const parts = (user.name || "").split(" ")
+        firstName = parts.shift() || ""
+        lastName = parts.join(" ") || ""
+      }
 
-  const [avatarFile, setAvatarFile] = useState<File | null>(null)
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
-  const [message, setMessage] = useState("")
-  const [fetching, setFetching] = useState(false)
-  const [saving, setSaving] = useState(false)
+      // Extract category/subcategory from nested Userprofile (camelCase: categoryId, subcategoryId)
+      const categoryId = userProfile.categoryId || user.category?.id || undefined
+      const subcategoryId = userProfile.subcategoryId || user.sub_category?.id || undefined
 
-  useEffect(() => {
-    let mounted = true
-    async function loadProfile() {
-      setFetching(true)
-      try {
-        const res = await fetch("/api/auth/profile")
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.message || "فشل جلب البيانات")
-        if (!mounted) return
-        const p: any = data.data || {}
-        const parts = (p.name || "").split(" ")
-        setProfile({
-          first_name: parts.shift() || "",
-          last_name: parts.join(" ") || "",
-          email: p.email || "",
-          phone: p.phone || "",
-          gender: p.gender || "",
-          dob: p.dob || "",
-          country: p.country?.name || "",
-          category: p.category?.name || "",
-          sub_category: p.sub_category?.name || "",
-          avatar: p.avatar || "",
-        })
-        setAvatarPreview(p.avatar || null)
-      } catch (err) {
-        // ignore
-      } finally {
-        if (mounted) setFetching(false)
+      initialProfile = {
+        first_name: firstName,
+        last_name: lastName,
+        email: user.email || "",
+        phone: user.phone || "",
+        gender: userProfile.gender || user.gender || "",
+        dob: userProfile.dateOfBirth || user.dob || "",
+        // provide both localized name and ids so client can pick IDs
+        country: user.country?.name || "",
+        country_id: user.country?.id ?? user.country_id,
+        country_code: user.country?.code || "", // dial code like "+20"
+        category: user.category?.name || "",
+        category_id: categoryId,
+        sub_category: user.sub_category?.name || "",
+        sub_category_id: subcategoryId,
+        avatar: user.avatar || "",
+        // Social media from Userprofile
+        facebook: userProfile.facebook || user.facebook || "",
+        linkedin: userProfile.linkedin || user.linkedin || "",
+        twitter: userProfile.twitterX || user.twitterX || "",
+        pinterest: userProfile.pinterest || user.pinterest || "",
+        locale: user.locale || "",
       }
     }
-    loadProfile()
-    return () => {
-      mounted = false
-    }
-  }, [])
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
-    setProfile((s) => ({ ...s, [name]: value }))
+  } catch (err) {
+    // ignore - client will fetch
   }
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setAvatarFile(file)
-      setAvatarPreview(URL.createObjectURL(file))
-    }
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSaving(true)
-    setMessage("")
-    try {
-      const form = new FormData()
-      form.append("name", `${profile.first_name} ${profile.last_name}`)
-      form.append("email", profile.email || "")
-      form.append("phone", profile.phone || "")
-      if (profile.gender) form.append("gender", profile.gender)
-      if (profile.dob) form.append("dob", profile.dob)
-      if (profile.country) form.append("country", profile.country)
-      if (profile.category) form.append("category", profile.category)
-      if (profile.sub_category) form.append("sub_category", profile.sub_category)
-      if (avatarFile) form.append("avatar", avatarFile)
-
-      const res = await fetch("/api/auth/profile", {
-        method: "POST",
-        body: form,
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || "فشل حفظ البيانات")
-      setMessage("تم حفظ البيانات بنجاح")
-      if (data.data?.avatar) setAvatarPreview(data.data.avatar)
-    } catch (err: unknown) {
-      setMessage(err instanceof Error ? err.message : "فشل حفظ البيانات")
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <div className="w-full">
-      <div className="rounded-[16px] border border-[#E5E7EB] bg-white p-4 sm:p-6 shadow-sm">
-        <h1 className="text-xl sm:text-2xl font-bold text-[#111827] mb-6">Basic Info</h1>
-
-        {message && (
-          <div className="mb-4 p-4 bg-blue-50 text-blue-800 rounded-lg text-sm sm:text-base">
-            {message}
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
-          {/* Avatar Section - Left Sidebar */}
-          <div className="lg:col-span-1 flex flex-col items-center gap-6">
-            {/* Avatar */}
-            <div className="relative w-full flex flex-col items-center">
-              <Avatar size="lg" className="h-32 w-32 sm:h-40 sm:w-40">
-                {avatarPreview ? (
-                  <AvatarImage src={avatarPreview} alt="avatar" />
-                ) : (
-                  <AvatarFallback className="text-4xl">
-                    {(profile.first_name || profile.email || "").charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                )}
-              </Avatar>
-              <label className="mt-3">
-                <input
-                  accept="image/*"
-                  onChange={handleAvatarChange}
-                  type="file"
-                  className="hidden"
-                />
-                <span className="inline-flex items-center justify-center px-4 py-2 bg-white text-xs sm:text-sm rounded-full border border-gray-200 cursor-pointer hover:bg-gray-50 transition">
-                  Upload Photo
-                </span>
-              </label>
-            </div>
-
-            {/* Linked Accounts */}
-            <div className="w-full">
-              <h4 className="text-sm font-semibold text-[#111827] mb-3">
-                Linked accounts
-              </h4>
-              <div className="flex flex-col gap-2 w-full">
-                <button className="w-full py-2 rounded text-xs sm:text-sm bg-[#1877F2] text-white hover:bg-[#1563D3] transition font-medium">
-                  Facebook
-                </button>
-                <button className="w-full py-2 rounded text-xs sm:text-sm border border-gray-300 hover:bg-gray-50 transition text-gray-700 font-medium">
-                  LinkedIn
-                </button>
-                <button className="w-full py-2 rounded text-xs sm:text-sm border border-gray-300 hover:bg-gray-50 transition text-gray-700 font-medium">
-                  X
-                </button>
-                <button className="w-full py-2 rounded text-xs sm:text-sm border border-gray-300 hover:bg-gray-50 transition text-gray-700 font-medium">
-                  Pinterest
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Form Section - Main Content */}
-          <form onSubmit={handleSubmit} className="lg:col-span-3 space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-                  First Name
-                </label>
-                <Input
-                  name="first_name"
-                  value={profile.first_name}
-                  onChange={handleChange}
-                  placeholder="Taha"
-                  className="text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-                  Last Name
-                </label>
-                <Input
-                  name="last_name"
-                  value={profile.last_name}
-                  onChange={handleChange}
-                  placeholder="Mohamed"
-                  className="text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-                  Email
-                </label>
-                <Input
-                  name="email"
-                  value={profile.email}
-                  onChange={handleChange}
-                  placeholder="taha@gmail.com"
-                  className="text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-                  Gender
-                </label>
-                <select
-                  aria-label="gender"
-                  name="gender"
-                  value={profile.gender}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500 bg-white"
-                >
-                  <option value="">Select</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-                  Date of Birth
-                </label>
-                <Input
-                  type="date"
-                  name="dob"
-                  value={profile.dob}
-                  onChange={handleChange}
-                  className="text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-                  Phone
-                </label>
-                <div className="flex gap-2">
-                  <select className="w-20 px-2 py-2 border border-gray-300 rounded text-xs bg-white">
-                    <option>+20</option>
-                  </select>
-                  <Input
-                    name="phone"
-                    value={profile.phone?.replace("+20", "") || ""}
-                    onChange={(e) => handleChange({ ...e, target: { ...e.target, value: "+20" + e.target.value } })}
-                    placeholder="1003630088"
-                    className="text-sm flex-1"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-                  Country
-                </label>
-                <select
-                  name="country"
-                  value={profile.country}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500 bg-white"
-                >
-                  <option value="">Select Country</option>
-                  <option value="Egypt">Egypt</option>
-                  <option value="Saudi Arabia">Saudi Arabia</option>
-                  <option value="UAE">UAE</option>
-                  <option value="Qatar">Qatar</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-                  Category
-                </label>
-                <select
-                  name="category"
-                  value={profile.category}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500 bg-white"
-                >
-                  <option value="">Select Category</option>
-                  <option value="Healthcare">Healthcare</option>
-                  <option value="IT">IT</option>
-                  <option value="Finance">Finance</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-                  Sub Category
-                </label>
-                <select
-                  name="sub_category"
-                  value={profile.sub_category}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500 bg-white"
-                >
-                  <option value="">Select Sub Category</option>
-                  <option value="Nursing">Specialized Nursing</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-                New password
-              </label>
-              <Input
-                type="password"
-                placeholder="••••••••••"
-                className="text-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-[#374151] mb-2">
-                Confirm password
-              </label>
-              <Input
-                type="password"
-                placeholder="••••••••••"
-                className="text-sm"
-              />
-            </div>
-
-            <div className="flex justify-center pt-4">
-              <button
-                type="submit"
-                disabled={saving || loading}
-                className="px-12 py-3 rounded-full bg-gradient-to-r from-[#006EA8] to-[#005685] text-white text-base font-semibold shadow-[0_24px_48px_rgba(0,86,133,0.16)] hover:shadow-[0_24px_48px_rgba(0,86,133,0.24)] transition disabled:opacity-60"
-              >
-                {saving ? "Updating..." : "Update"}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  )
+  return <UserProfileClient locale={locale} initialProfile={initialProfile} />
 }

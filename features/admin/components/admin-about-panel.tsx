@@ -32,29 +32,90 @@ function emptyLocale(): Record<LocaleKey, string> {
   return { ar: "", en: "", de: "" }
 }
 
-function mapContentToMainForm(content: AboutPageContent | null): MainFormState {
-  if (!content) return { title: emptyLocale(), descriptionLeft: emptyLocale(), descriptionRight: emptyLocale() }
+function mapContentToMainForm(content: AboutPageContent | null, lang?: LocaleKey): MainFormState {
+  const base: MainFormState = { title: emptyLocale(), descriptionLeft: emptyLocale(), descriptionRight: emptyLocale() }
+  if (!content) return base
+
+  if (lang) {
+    return {
+      title: { ...base.title, [lang]: content.title ?? "" },
+      descriptionLeft: { ...base.descriptionLeft, [lang]: content.descriptionLeft ?? "" },
+      descriptionRight: { ...base.descriptionRight, [lang]: content.descriptionRight ?? "" },
+    }
+  }
+
+  // Fallback: fill all locales with the provided content (preserve old behavior)
   return {
-    title: { ar: content.title, en: content.title, de: content.title },
-    descriptionLeft: { ar: content.descriptionLeft, en: content.descriptionLeft, de: content.descriptionLeft },
-    descriptionRight: { ar: content.descriptionRight, en: content.descriptionRight, de: content.descriptionRight },
+    title: { ar: content.title ?? "", en: content.title ?? "", de: content.title ?? "" },
+    descriptionLeft: { ar: content.descriptionLeft ?? "", en: content.descriptionLeft ?? "", de: content.descriptionLeft ?? "" },
+    descriptionRight: { ar: content.descriptionRight ?? "", en: content.descriptionRight ?? "", de: content.descriptionRight ?? "" },
   }
 }
 
-function mapContentToSecondForm(content: AboutPageContent | null): SecondFormState {
-  if (!content) return { secondTitle: emptyLocale(), secondDescription: emptyLocale() }
+function mapContentToSecondForm(content: AboutPageContent | null, lang?: LocaleKey): SecondFormState {
+  const base: SecondFormState = { secondTitle: emptyLocale(), secondDescription: emptyLocale() }
+  if (!content) return base
+
+  if (lang) {
+    return {
+      secondTitle: { ...base.secondTitle, [lang]: content.secondTitle ?? "" },
+      secondDescription: { ...base.secondDescription, [lang]: content.secondDescription ?? "" },
+    }
+  }
+
   return {
-    secondTitle: { ar: content.secondTitle, en: content.secondTitle, de: content.secondTitle },
-    secondDescription: { ar: content.secondDescription, en: content.secondDescription, de: content.secondDescription },
+    secondTitle: { ar: content.secondTitle ?? "", en: content.secondTitle ?? "", de: content.secondTitle ?? "" },
+    secondDescription: { ar: content.secondDescription ?? "", en: content.secondDescription ?? "", de: content.secondDescription ?? "" },
   }
 }
 
-function mapFeaturesToForm(features: AboutFeature[]): FeatureForm[] {
-  return features.map((f) => ({
-    id: f.id,
-    title: { ar: f.title, en: f.title, de: f.title },
-    description: { ar: f.description, en: f.description, de: f.description },
-  }))
+function mapFeaturesToForm(features: AboutFeature[], lang?: LocaleKey): FeatureForm[] {
+  return features.map((f) => {
+    const title = emptyLocale()
+    const description = emptyLocale()
+    if (lang) {
+      title[lang] = f.title ?? ""
+      description[lang] = f.description ?? ""
+    } else {
+      title.ar = f.title ?? ""
+      title.en = f.title ?? ""
+      title.de = f.title ?? ""
+      description.ar = f.description ?? ""
+      description.en = f.description ?? ""
+      description.de = f.description ?? ""
+    }
+    return { id: f.id, title, description }
+  })
+}
+
+function buildAlignedFeatures(allLocalesContent: any, content: AboutPageContent | null): FeatureForm[] {
+  const arList: AboutFeature[] = (allLocalesContent?.["ar"] ?? content)?.features ?? []
+  const enList: AboutFeature[] = (allLocalesContent?.["en"] ?? content)?.features ?? []
+  const deList: AboutFeature[] = (allLocalesContent?.["de"] ?? content)?.features ?? []
+
+  const map = new Map<string, FeatureForm>()
+  const order: string[] = []
+
+  function addList(list: AboutFeature[], lang: LocaleKey) {
+    for (let i = 0; i < list.length; i++) {
+      const f = list[i]
+      const key = f.id !== undefined ? String(f.id) : `${lang}-${i}`
+      if (!map.has(key)) {
+        // Keep ordering key separate from the real id. If the feature has no real id, keep id undefined.
+        map.set(key, { id: f.id !== undefined ? f.id : undefined, title: emptyLocale(), description: emptyLocale() })
+        order.push(key)
+      }
+      const item = map.get(key)!
+      item.title[lang] = f.title ?? ""
+      item.description[lang] = f.description ?? ""
+    }
+  }
+
+  addList(arList, "ar")
+  addList(enList, "en")
+  addList(deList, "de")
+
+  return order.map((k) => map.get(k)!)
 }
 
 function LocaleCard({
@@ -141,6 +202,8 @@ function ImageUploadBox({
         type="file"
         accept="image/*"
         className="hidden"
+        aria-label="Upload image file"
+        title="Upload image file"
         onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f) }}
       />
     </div>
@@ -161,10 +224,36 @@ export function AdminAboutPanel({
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [activeTab, setActiveTab] = useState<"main" | "second" | "features">("main")
+  const [editLocale, setEditLocale] = useState<LocaleKey>((locale as LocaleKey) || "ar")
 
-  const [mainForm, setMainForm] = useState<MainFormState>(() => mapContentToMainForm(content))
-  const [secondForm, setSecondForm] = useState<SecondFormState>(() => mapContentToSecondForm(content))
-  const [features, setFeatures] = useState<FeatureForm[]>(() => mapFeaturesToForm(content?.features ?? []))
+  // Extract all locales data (sent from server for admin editing)
+  const allLocalesContent = (content as any)?.__allLocales
+
+  // Initialize forms for each locale
+  const [translations, setTranslations] = useState<Record<LocaleKey, { main: MainFormState; second: SecondFormState; features: FeatureForm[] }>>(
+    () => {
+      const aligned = buildAlignedFeatures(allLocalesContent, content)
+      return {
+        ar: {
+          main: mapContentToMainForm(allLocalesContent?.["ar"] ?? content, "ar"),
+          second: mapContentToSecondForm(allLocalesContent?.["ar"] ?? content, "ar"),
+          features: aligned.map((f) => ({ id: f.id, title: { ar: f.title.ar ?? "", en: "", de: "" }, description: { ar: f.description.ar ?? "", en: "", de: "" } })),
+        },
+        en: {
+          main: mapContentToMainForm(allLocalesContent?.["en"] ?? content, "en"),
+          second: mapContentToSecondForm(allLocalesContent?.["en"] ?? content, "en"),
+          features: aligned.map((f) => ({ id: f.id, title: { ar: "", en: f.title.en ?? "", de: "" }, description: { ar: "", en: f.description.en ?? "", de: "" } })),
+        },
+        de: {
+          main: mapContentToMainForm(allLocalesContent?.["de"] ?? content, "de"),
+          second: mapContentToSecondForm(allLocalesContent?.["de"] ?? content, "de"),
+          features: aligned.map((f) => ({ id: f.id, title: { ar: "", en: "", de: f.title.de ?? "" }, description: { ar: "", en: "", de: f.description.de ?? "" } })),
+        },
+      }
+    }
+  )
+
+  const currentTranslation = translations[editLocale]
 
   // Image files
   const [primaryImage, setPrimaryImage] = useState<File | null>(null)
@@ -178,6 +267,23 @@ export function AdminAboutPanel({
   const videoInputRef = useRef<HTMLInputElement>(null)
 
   const isRTL = locale === "ar"
+
+  function updateMainForm(updates: Partial<MainFormState>) {
+    setTranslations(prev => ({
+      ...prev,
+      [editLocale]: { ...prev[editLocale], main: { ...prev[editLocale].main, ...updates } }
+    }))
+  }
+
+  function updateSecondForm(updates: Partial<SecondFormState>) {
+    setTranslations(prev => ({
+      ...prev,
+      [editLocale]: { ...prev[editLocale], second: { ...prev[editLocale].second, ...updates } }
+    }))
+  }
+
+  // NOTE: features are kept aligned across locales in `translations` (same length and ids)
+  // updateFeatures was previously per-locale; we now provide explicit helpers below.
 
   function handlePrimaryImage(f: File) {
     setPrimaryImage(f)
@@ -194,21 +300,57 @@ export function AdminAboutPanel({
     setVideoPreview(URL.createObjectURL(f))
   }
 
-  // Features helpers
+  // Features helpers: keep arrays in `translations` aligned across locales
   function addFeature() {
-    setFeatures((prev) => [
-      ...prev,
-      { title: emptyLocale(), description: emptyLocale() },
-    ])
+    setTranslations((prev) => {
+      const next: typeof prev = { ...prev }
+      for (const loc of Object.keys(next) as LocaleKey[]) {
+        next[loc] = {
+          ...next[loc],
+          features: [
+            ...next[loc].features,
+            { id: undefined, title: emptyLocale(), description: emptyLocale() },
+          ],
+        }
+      }
+      return next
+    })
   }
   function removeFeature(idx: number) {
-    setFeatures((prev) => prev.filter((_, i) => i !== idx))
+    setTranslations((prev) => {
+      const next: typeof prev = { ...prev }
+      for (const loc of Object.keys(next) as LocaleKey[]) {
+        next[loc] = { ...next[loc], features: next[loc].features.filter((_, i) => i !== idx) }
+      }
+      return next
+    })
   }
   function updateFeatureField(idx: number, field: "title" | "description", lang: LocaleKey, value: string) {
-    setFeatures((prev) =>
-      prev.map((f, i) => (i === idx ? { ...f, [field]: { ...f[field], [lang]: value } } : f))
-    )
+    setTranslations((prev) => ({
+      ...prev,
+      [editLocale]: {
+        ...prev[editLocale],
+        features: prev[editLocale].features.map((f, i) =>
+          i === idx ? { ...f, [field]: { ...f[field], [lang]: value } } : f
+        ),
+      },
+    }))
   }
+
+  // Build a canonical combined features list (one item per index) for rendering and submitting
+  const canonicalFeatures: FeatureForm[] = translations.ar.features.map((a, idx) => ({
+    id: a.id,
+    title: {
+      ar: a.title.ar ?? "",
+      en: translations.en.features[idx]?.title.en ?? "",
+      de: translations.de.features[idx]?.title.de ?? "",
+    },
+    description: {
+      ar: a.description.ar ?? "",
+      en: translations.en.features[idx]?.description.en ?? "",
+      de: translations.de.features[idx]?.description.de ?? "",
+    },
+  }))
 
   function appendLocalized(fd: FormData, key: string, values: Record<LocaleKey, string>) {
     for (const lang of LOCALES) {
@@ -224,26 +366,34 @@ export function AdminAboutPanel({
 
     const fd = new FormData()
 
-    // Main section
-    appendLocalized(fd, "title", mainForm.title)
-    appendLocalized(fd, "description_left", mainForm.descriptionLeft)
-    appendLocalized(fd, "description_right", mainForm.descriptionRight)
-
-    // Second section
-    appendLocalized(fd, "second_title", secondForm.secondTitle)
-    appendLocalized(fd, "second_description", secondForm.secondDescription)
+    // Collect all translations for each key
+    for (const lang of LOCALES) {
+      const trans = translations[lang]
+      // Main section
+      if (trans.main.title[lang]?.trim()) fd.append(`title[${lang}]`, trans.main.title[lang])
+      if (trans.main.descriptionLeft[lang]?.trim()) fd.append(`description_left[${lang}]`, trans.main.descriptionLeft[lang])
+      if (trans.main.descriptionRight[lang]?.trim()) fd.append(`description_right[${lang}]`, trans.main.descriptionRight[lang])
+      // Second section
+      if (trans.second.secondTitle[lang]?.trim()) fd.append(`second_title[${lang}]`, trans.second.secondTitle[lang])
+      if (trans.second.secondDescription[lang]?.trim()) fd.append(`second_description[${lang}]`, trans.second.secondDescription[lang])
+    }
 
     // Images - only file uploads (never URL strings to avoid "حقل video يجب أن يكون ملفًا")
     if (primaryImage) fd.append("image", primaryImage)
     if (secondaryImage) fd.append("second_image", secondaryImage)
     if (videoFile) fd.append("video", videoFile)
 
-    // Features
-    features.forEach((f, idx) => {
+    // Features - submit aligned canonical features (one item per index)
+    for (let idx = 0; idx < canonicalFeatures.length; idx++) {
+      const f = canonicalFeatures[idx]
       if (f.id) fd.append(`features[${idx}][id]`, String(f.id))
-      appendLocalized(fd, `features[${idx}][title]`, f.title)
-      appendLocalized(fd, `features[${idx}][description]`, f.description)
-    })
+      for (const lang of LOCALES) {
+        const titleVal = f.title[lang]?.trim()
+        const descVal = f.description[lang]?.trim()
+        if (titleVal) fd.append(`features[${idx}][title][${lang}]`, titleVal)
+        if (descVal) fd.append(`features[${idx}][description][${lang}]`, descVal)
+      }
+    }
 
     startTransition(async () => {
       const result = await saveAboutAction(fd, locale)
@@ -262,21 +412,43 @@ export function AdminAboutPanel({
       : "text-[#6B7280] hover:text-[#111827]"
     }`
 
+  const localeTabClass = (loc: LocaleKey) =>
+    `px-3 py-1.5 text-xs font-semibold rounded transition-colors ${editLocale === loc
+      ? "bg-[#006EA8] text-white"
+      : "bg-[#EBF5FB] text-[#006EA8] hover:bg-[#006EA8] hover:text-white"
+    }`
+
   return (
     <form
       onSubmit={handleSubmit}
       className="flex flex-col gap-6 rounded-[12px] border border-[#E5E7EB] bg-white p-4 shadow-sm sm:p-6"
     >
-      {/* Tabs */}
+      {/* Language Selection Tabs */}
+      <div className="flex gap-2 border-b border-[#E5E7EB] pb-3">
+        <label className="text-xs font-medium text-[#6B7280] self-center">{isRTL ? "اللغة:" : "Language:"}</label>
+        {LOCALES.map((lang) => (
+          <button
+            key={lang}
+            type="button"
+            className={localeTabClass(lang)}
+            onClick={() => setEditLocale(lang)}
+            title={`Edit ${lang.toUpperCase()} translations`}
+          >
+            {lang.toUpperCase()}
+          </button>
+        ))}
+      </div>
+
+      {/* Section Tabs */}
       <div className="flex flex-wrap gap-1 border-b border-[#E5E7EB]">
-        <button type="button" className={tabClass("main")} onClick={() => setActiveTab("main")}>
+        <button type="button" className={tabClass("main")} onClick={() => setActiveTab("main")} title="Edit header section">
           {isRTL ? "عنوان الهيدر / وصف الهيدر" : "Header / Description"}
         </button>
-        <button type="button" className={tabClass("second")} onClick={() => setActiveTab("second")}>
+        <button type="button" className={tabClass("second")} onClick={() => setActiveTab("second")} title="Edit second section">
           {isRTL ? "القسم الثاني" : "Second Section"}
         </button>
-        <button type="button" className={tabClass("features")} onClick={() => setActiveTab("features")}>
-          {isRTL ? `المزايا (${features.length})` : `Features (${features.length})`}
+        <button type="button" className={tabClass("features")} onClick={() => setActiveTab("features")} title="Edit features">
+          {isRTL ? `المزايا (${canonicalFeatures.length})` : `Features (${canonicalFeatures.length})`}
         </button>
       </div>
 
@@ -291,28 +463,23 @@ export function AdminAboutPanel({
       )}
 
       {/* ── TAB: Main ── */}
+      {/* ── TAB: Main ── */}
       {activeTab === "main" && (
         <div className="space-y-5">
-
-
-          <div className="grid gap-4 lg:grid-cols-3">
-            {LOCALES.map((lang) => (
-              <div key={lang} className="space-y-3 rounded-[8px] border border-[#E5E7EB] bg-[#F9FAFB] p-4">
-                <p className="text-xs font-bold uppercase tracking-widest text-[#006EA8]">{lang}</p>
-                <LocaleCard lang={lang} label={isRTL ? "العنوان" : "Title"}
-                  value={mainForm.title[lang]}
-                  onChange={(v) => setMainForm((s) => ({ ...s, title: { ...s.title, [lang]: v } }))}
-                />
-                <LocaleCard lang={lang} label={isRTL ? "الوصف الأيسر" : "Left Description"}
-                  value={mainForm.descriptionLeft[lang]} multiline
-                  onChange={(v) => setMainForm((s) => ({ ...s, descriptionLeft: { ...s.descriptionLeft, [lang]: v } }))}
-                />
-                <LocaleCard lang={lang} label={isRTL ? "الوصف الأيمن" : "Right Description"}
-                  value={mainForm.descriptionRight[lang]} multiline
-                  onChange={(v) => setMainForm((s) => ({ ...s, descriptionRight: { ...s.descriptionRight, [lang]: v } }))}
-                />
-              </div>
-            ))}
+          <div className="space-y-3 rounded-[8px] border border-[#E5E7EB] bg-[#F9FAFB] p-4">
+            <p className="text-xs font-bold uppercase tracking-widest text-[#006EA8]">{editLocale.toUpperCase()}</p>
+            <LocaleCard lang={editLocale} label={isRTL ? "العنوان" : "Title"}
+              value={currentTranslation.main.title[editLocale]}
+              onChange={(v) => updateMainForm({ title: { ...currentTranslation.main.title, [editLocale]: v } })}
+            />
+            <LocaleCard lang={editLocale} label={isRTL ? "الوصف الأيسر" : "Left Description"}
+              value={currentTranslation.main.descriptionLeft[editLocale]} multiline
+              onChange={(v) => updateMainForm({ descriptionLeft: { ...currentTranslation.main.descriptionLeft, [editLocale]: v } })}
+            />
+            <LocaleCard lang={editLocale} label={isRTL ? "الوصف الأيمن" : "Right Description"}
+              value={currentTranslation.main.descriptionRight[editLocale]} multiline
+              onChange={(v) => updateMainForm({ descriptionRight: { ...currentTranslation.main.descriptionRight, [editLocale]: v } })}
+            />
           </div>
 
           <ImageUploadBox
@@ -329,20 +496,16 @@ export function AdminAboutPanel({
       {/* ── TAB: Second Section ── */}
       {activeTab === "second" && (
         <div className="space-y-5">
-          <div className="grid gap-4 lg:grid-cols-3">
-            {LOCALES.map((lang) => (
-              <div key={lang} className="space-y-3 rounded-[8px] border border-[#E5E7EB] bg-[#F9FAFB] p-4">
-                <p className="text-xs font-bold uppercase tracking-widest text-[#006EA8]">{lang}</p>
-                <LocaleCard lang={lang} label={isRTL ? "عنوان القسم الثاني" : "Second Section Title"}
-                  value={secondForm.secondTitle[lang]}
-                  onChange={(v) => setSecondForm((s) => ({ ...s, secondTitle: { ...s.secondTitle, [lang]: v } }))}
-                />
-                <LocaleCard lang={lang} label={isRTL ? "وصف القسم الثاني" : "Second Section Description"}
-                  value={secondForm.secondDescription[lang]} multiline rows={4}
-                  onChange={(v) => setSecondForm((s) => ({ ...s, secondDescription: { ...s.secondDescription, [lang]: v } }))}
-                />
-              </div>
-            ))}
+          <div className="space-y-3 rounded-[8px] border border-[#E5E7EB] bg-[#F9FAFB] p-4">
+            <p className="text-xs font-bold uppercase tracking-widest text-[#006EA8]">{editLocale.toUpperCase()}</p>
+            <LocaleCard lang={editLocale} label={isRTL ? "عنوان القسم الثاني" : "Second Section Title"}
+              value={currentTranslation.second.secondTitle[editLocale]}
+              onChange={(v) => updateSecondForm({ secondTitle: { ...currentTranslation.second.secondTitle, [editLocale]: v } })}
+            />
+            <LocaleCard lang={editLocale} label={isRTL ? "وصف القسم الثاني" : "Second Section Description"}
+              value={currentTranslation.second.secondDescription[editLocale]} multiline rows={4}
+              onChange={(v) => updateSecondForm({ secondDescription: { ...currentTranslation.second.secondDescription, [editLocale]: v } })}
+            />
           </div>
 
           {/* Secondary Image */}
@@ -411,6 +574,8 @@ export function AdminAboutPanel({
               type="file"
               accept="video/*,video/mp4,video/webm"
               className="hidden"
+              aria-label="Upload video file"
+              title="Upload video file"
               onChange={handleVideoFile}
             />
           </div>
@@ -434,19 +599,20 @@ export function AdminAboutPanel({
             </button>
           </div>
 
-          {features.length === 0 && (
+          {canonicalFeatures.length === 0 && (
             <p className="rounded-lg bg-[#F9FAFB] py-8 text-center text-sm text-[#9CA3AF]">
               {isRTL ? "لا توجد مزايا. اضغط \"إضافة ميزة\" للبدء." : "No features. Click \"Add Feature\" to start."}
             </p>
           )}
 
           <div className="space-y-4">
-            {features.map((feature, idx) => (
+            {canonicalFeatures.map((feature, idx) => (
               <FeatureCard
                 key={feature.id ?? `new-${idx}`}
                 feature={feature}
                 idx={idx}
                 isRTL={isRTL}
+                editLocale={editLocale}
                 onUpdate={(field, lang, val) => updateFeatureField(idx, field, lang, val)}
                 onRemove={() => removeFeature(idx)}
               />
@@ -468,19 +634,19 @@ export function AdminAboutPanel({
 // ─── Feature Card ─────────────────────────────────────────────────────────────
 
 function FeatureCard({
-  feature, idx, isRTL, onUpdate, onRemove,
+  feature, idx, isRTL, editLocale, onUpdate, onRemove,
 }: {
-  feature: FeatureForm; idx: number; isRTL: boolean
+  feature: FeatureForm; idx: number; isRTL: boolean; editLocale: LocaleKey
   onUpdate: (field: "title" | "description", lang: LocaleKey, val: string) => void
   onRemove: () => void
 }) {
   const [open, setOpen] = useState(true)
-  const previewTitle = feature.title.ar || feature.title.en || `ميزة #${idx + 1}`
+  const previewTitle = feature.title[editLocale] || feature.title.ar || feature.title.en || `ميزة #${idx + 1}`
 
   return (
     <div className="rounded-[8px] border border-[#E5E7EB] bg-[#F9FAFB] overflow-hidden">
       <div className="flex items-center gap-3 px-4 py-3 border-b border-[#E5E7EB]">
-        <button type="button" onClick={() => setOpen((v) => !v)} className="flex flex-1 items-center gap-2 text-start">
+        <button type="button" onClick={() => setOpen((v) => !v)} className="flex flex-1 items-center gap-2 text-start" title="Toggle feature details">
           <span className="rounded bg-[#EAF4FB] px-1.5 py-0.5 text-xs font-bold text-[#006EA8]">
             #{idx + 1}
             {feature.id ? ` · ID:${feature.id}` : ` · ${isRTL ? "جديدة" : "New"}`}
@@ -492,6 +658,7 @@ function FeatureCard({
           type="button"
           onClick={onRemove}
           className="flex h-8 w-8 items-center justify-center rounded-full bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors"
+          title="Remove feature"
         >
           <Trash2 className="h-4 w-4" />
         </button>
@@ -499,28 +666,27 @@ function FeatureCard({
 
       {open && (
         <div className="p-4">
-          <div className="grid gap-3 sm:grid-cols-3">
-            {(["ar", "en", "de"] as LocaleKey[]).map((lang) => (
-              <div key={lang} className="space-y-2 rounded border bg-white p-3">
-                <span className="rounded bg-[#EAF4FB] px-1.5 py-0.5 text-xs font-bold text-[#006EA8]">
-                  {lang.toUpperCase()}
-                </span>
-                <input
-                  type="text"
-                  placeholder={isRTL ? "العنوان" : "Title"}
-                  value={feature.title[lang]}
-                  onChange={(e) => onUpdate("title", lang, e.target.value)}
-                  className="mt-1 w-full rounded border border-[#E5E7EB] px-2 py-1.5 text-sm focus:border-[#006EA8] focus:outline-none"
-                />
-                <textarea
-                  rows={2}
-                  placeholder={isRTL ? "الوصف" : "Description"}
-                  value={feature.description[lang]}
-                  onChange={(e) => onUpdate("description", lang, e.target.value)}
-                  className="w-full rounded border border-[#E5E7EB] px-2 py-1.5 text-sm focus:border-[#006EA8] focus:outline-none"
-                />
+          <div className="space-y-3">
+            <div className="rounded border bg-white p-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="rounded bg-[#EAF4FB] px-1.5 py-0.5 text-xs font-bold text-[#006EA8]">{editLocale.toUpperCase()}</span>
+                <span className="text-xs text-[#6B7280]">{isRTL ? "تحرير لغة" : "Editing"}</span>
               </div>
-            ))}
+              <input
+                type="text"
+                placeholder={isRTL ? "العنوان" : "Title"}
+                value={feature.title[editLocale] ?? ""}
+                onChange={(e) => onUpdate("title", editLocale, e.target.value)}
+                className="mt-1 w-full rounded border border-[#E5E7EB] px-2 py-1.5 text-sm focus:border-[#006EA8] focus:outline-none"
+              />
+              <textarea
+                rows={2}
+                placeholder={isRTL ? "الوصف" : "Description"}
+                value={feature.description[editLocale] ?? ""}
+                onChange={(e) => onUpdate("description", editLocale, e.target.value)}
+                className="w-full mt-2 rounded border border-[#E5E7EB] px-2 py-1.5 text-sm focus:border-[#006EA8] focus:outline-none"
+              />
+            </div>
           </div>
         </div>
       )}

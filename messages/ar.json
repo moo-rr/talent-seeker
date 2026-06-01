@@ -801,6 +801,9 @@
         "name": "الاسم",
         "email": "البريد",
         "phone": "الهاتف",
+        "country": "البلد",
+        "category": "التصنيف",
+        "status": "الحالة",
         "role": "الدور",
         "actions": "الإجراءات"
       },
@@ -816,16 +819,20 @@
     },
     "companies": {
       "title": "الشركات",
-      "description": "حسابات الشركات المسجلة",
+      "description": "إدارة حسابات الشركات",
       "columns": {
         "name": "الشركة",
         "email": "البريد",
         "phone": "الهاتف",
-        "verified": "التحقق"
+        "employees": "الموظفون",
+        "country": "البلد",
+        "status": "الحالة",
+        "actions": "الإجراءات"
       },
-      "verified": "موثّق",
-      "notVerified": "غير موثّق",
-      "empty": "لا توجد شركات"
+      "delete": "حذف",
+      "deleteConfirm": "هل تريد حذف هذه الشركة؟",
+      "empty": "لا توجد شركات",
+      "error": "تعذر الحذف"
     },
     "successStories": {
       "title": "قصص النجاح",

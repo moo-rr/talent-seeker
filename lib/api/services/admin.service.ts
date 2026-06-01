@@ -1,5 +1,5 @@
 // lib/api/services/admin.service.ts
-import { api } from "../client"
+import { api, ApiError } from "../client"
 import type { ApiResponse, Job, JobApplication, User, PaginationMeta } from "../types"
 import { normalizeJob } from "./jobs.service"
 
@@ -154,11 +154,86 @@ export async function getAdminUsers(
   locale = "ar"
 ): Promise<{ data: User[]; meta: PaginationMeta }> {
   const query = role ? `?role=${role}&page=${page}` : `?page=${page}`
-  const response = await api.get<ApiResponse<User[]>>(
-    `/admin/users${query}`,
-    { token, locale }
-  )
-  return { data: response.data, meta: response.meta! }
+
+  function matchesRole(u: User, wanted?: string) {
+    if (!wanted) return true
+    if (typeof (u as any).role === "string") return (u as any).role === wanted
+    if (Array.isArray((u as any).roles)) {
+      return (u as any).roles.some((r: any) => {
+        if (typeof r === "string") return r === wanted
+        if (r && typeof r === "object") {
+          const rr = r as Record<string, unknown>
+          return rr.name === wanted || rr.slug === wanted
+        }
+        return false
+      })
+    }
+    return false
+  }
+
+  try {
+    const response = await api.get<ApiResponse<User[]>>(`/admin/users${query}`, { token, locale })
+    let data = response.data ?? []
+    if (role) data = data.filter((u) => matchesRole(u, role))
+
+    // If backend returned pagination meta, prefer and return it (it may contain
+    // the accurate `total` count). Only fall back to computed totals when meta
+    // is absent.
+    if (response.meta) {
+      const meta: PaginationMeta = {
+        current_page: response.meta.current_page ?? page,
+        last_page: response.meta.last_page ?? Math.max(1, Math.ceil((response.meta.total ?? data.length) / (response.meta.per_page ?? 10))),
+        per_page: response.meta.per_page ?? 10,
+        total: typeof response.meta.total === "number" ? response.meta.total : data.length,
+      }
+      return { data, meta }
+    }
+
+    const per_page = 10
+    const meta: PaginationMeta = {
+      current_page: page,
+      last_page: Math.max(1, Math.ceil(data.length / per_page)),
+      per_page,
+      total: data.length,
+    }
+
+    return { data, meta }
+  } catch (err) {
+    // If the backend does not expose /admin/users, fall back to the public /users endpoint
+    if (err instanceof ApiError && err.status === 404) {
+      try {
+        const fallback = await api.get<ApiResponse<User[]>>(`/users${query}`, { token, locale })
+        let data = fallback.data ?? []
+        if (role) data = data.filter((u) => matchesRole(u, role))
+
+        if (fallback.meta) {
+          const meta: PaginationMeta = {
+            current_page: fallback.meta.current_page ?? page,
+            last_page: fallback.meta.last_page ?? Math.max(1, Math.ceil((fallback.meta.total ?? data.length) / (fallback.meta.per_page ?? 10))),
+            per_page: fallback.meta.per_page ?? 10,
+            total: typeof fallback.meta.total === "number" ? fallback.meta.total : data.length,
+          }
+          return { data, meta }
+        }
+
+        const per_page = 10
+        const meta: PaginationMeta = {
+          current_page: page,
+          last_page: Math.max(1, Math.ceil(data.length / per_page)),
+          per_page,
+          total: data.length,
+        }
+
+        return { data, meta }
+      } catch (err2) {
+        console.error("[Admin Service] getAdminUsers fallback error:", err2)
+        return { data: [], meta: { current_page: page, last_page: 1, per_page: 10, total: 0 } }
+      }
+    }
+
+    console.error("[Admin Service] getAdminUsers error:", err)
+    throw err
+  }
 }
 
 export async function getAdminStats(

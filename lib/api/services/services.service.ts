@@ -104,6 +104,22 @@ export async function getServices(locale = "ar"): Promise<Service[]> {
   }
 }
 
+// Get raw service data with all language versions preserved (for editing)
+export async function getServicesRaw(locale?: string): Promise<any[]> {
+  try {
+    const response = await api.get<unknown>("/service", { locale })
+    if (!response || typeof response !== "object") return []
+
+    const root = response as Record<string, unknown>
+    const list = Array.isArray(root.data) ? root.data : Array.isArray(response) ? response : []
+
+    return list
+  } catch (err) {
+    console.error("[getServicesRaw] error:", err)
+    return []
+  }
+}
+
 export async function createServiceAdmin(
   formData: FormData,
   token: string,
@@ -118,8 +134,10 @@ export async function updateServiceAdmin(
   token: string,
   locale = "ar"
 ): Promise<void> {
-  // Laravel requires _method=PUT for form-data updates
-  await api.post<unknown>(`/service/${id}?_method=PUT`, formData, { token, locale })
+  // Some backends expect update via the same `/service` endpoint (POST with id in payload).
+  // Ensure `id` exists in the form data and use the canonical `/service` POST endpoint.
+  if (!formData.has("id")) formData.append("id", String(id))
+  await api.post<unknown>(`/service`, formData, { token, locale })
 }
 
 export async function deleteServiceAdmin(

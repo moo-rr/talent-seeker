@@ -205,3 +205,21 @@ export async function getAdminNewsItem(
     return null
   }
 }
+
+// Return raw news item (un-normalized) for admin editors
+export async function getAdminNewsItemRaw(
+  id: number | string,
+  token: string,
+  locale = "ar"
+): Promise<any | null> {
+  try {
+    const response = await api.get<unknown>(`/news/${id}`, { token, locale })
+    if (!response || typeof response !== "object") return null
+    const root = response as Record<string, unknown>
+    const item = (root.data ?? response) as any
+    return item
+  } catch (err) {
+    console.error("[getAdminNewsItemRaw] error:", err)
+    return null
+  }
+}
