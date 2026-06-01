@@ -112,17 +112,7 @@ async function fetchApi<T>(endpoint: string, options: FetchOptions = {}): Promis
     (fetchOptions as unknown as { cache?: RequestCache }).cache ??
     (nextOption ? undefined : "no-store")
 
-  // Debug: log key request info on the server to diagnose locale propagation
-  if (!isBrowser) {
-    try {
-      // Avoid logging sensitive tokens; only indicate presence
-      const hasAuth = !!headers["Authorization"]
-      // eslint-disable-next-line no-console
-      console.debug(`[api] ${fetchOptions.method ?? "GET"} ${requestUrl} Accept-Language=${headers["Accept-Language"]} X-Requested-Locale=${headers["X-Requested-Locale"]} locale_query=${locale} auth=${hasAuth} cache=${cacheOption ?? "default"}`)
-    } catch (e) {
-      // ignore
-    }
-  }
+  // Debug logging removed to reduce console noise
   const res = await fetch(requestUrl, {
     ...fetchOptions,
     headers,

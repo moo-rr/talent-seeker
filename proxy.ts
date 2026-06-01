@@ -67,13 +67,7 @@ export default async function proxy(request: NextRequest) {
   requestHeaders.set("X-Requested-Locale", urlLocale)
   requestHeaders.set("X-NEXT-INTL-LOCALE", urlLocale)
 
-  // Debug: طباعة المعلومات الأساسية للمساعدة في تتبع مشكلة الـ locale
-  // eslint-disable-next-line no-console
-  console.debug(`[proxy] pathname=${pathname} urlLocale=${urlLocale}`)
-  // eslint-disable-next-line no-console
-  console.debug(`[proxy] original Accept-Language=${request.headers.get("accept-language")}`)
-  // eslint-disable-next-line no-console
-  console.debug(`[proxy] forwarded Accept-Language=${requestHeaders.get("Accept-Language")} X-NEXT-INTL-LOCALE=${requestHeaders.get("X-NEXT-INTL-LOCALE")}`)
+
 
   // السماح برسائل API بدون تحقق من المصادقة
   if (pathname.startsWith("/api/auth") || pathname.startsWith("/api/public")) {
